@@ -1,1 +1,3321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <!-- === META PWA + RESPONSIVE + PERFORMANCE === -->
+    <!-- Optimisé pour mobile/desktop, 60FPS garanti, PWA installable -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="description" content="Quantum Factory Tycoon 7.0 - Tycoon idle stratégique quantique/mystique">
+    <title>Quantum Factory Tycoon 7.0 - Singularity Edition</title>
+    
+    <!-- === STYLE GLOBAL QUANTUM (CSS inline) === -->
+    <!-- Design minimaliste: 95% grille visible mobile, 92% PC -->
+    <style>
+        /* === RESET QUANTUM + VARIABLES CSS === */
+        /* Reset pour performances optimales et compatibilité cross-platform */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Variables globales pour thème quantique (néons cyan/magenta) */
+        :root {
+            /* Couleurs quantiques */
+            --quantum-cyan: #00ffff;
+            --quantum-magenta: #ff00ff;
+            --quantum-dark: #0a0a1a;
+            --quantum-darker: #000000;
+            --quantum-glow: 0 0 20px;
+            
+            /* Tailles responsive */
+            --ghost-ui-size: min(5vw, 24px);
+            --orbit-ui-width: 220px;
+            --grid-max-size: min(95vh, 95vw);
+            
+            /* Animations */
+            --transition-quantum: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-nebula: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        
+        /* === FOND NÉBULEUSE QUANTIQUE (gradient animé) === */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--quantum-dark);
+            color: white;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            /* Gradient nébuleuse animé */
+            background: radial-gradient(
+                ellipse 120% 80% at 50% 20%,
+                #0a0a1a 0%,
+                #000011 30%,
+                #000000 70%
+            );
+            /* Particules de fond subtiles */
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px, 70px 70px;
+        }
+        
+        /* === CONTAINER PRINCIPAL (grille + UI) === */
+        /* Container fixe fullscreen avec perspective 3D pour effet orbital PC */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            perspective: 1000px;
+            touch-action: none; /* Désactive le scroll natif pour nos gestures */
+        }
+        
+        /* === CANVAS GRILLE PRINCIPALE (90-95% écran) === */
+        /* Canvas optimisé pour 60FPS: image-rendering: pixelated pour netteté */
+        #gridCanvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: var(--grid-max-size);
+            height: var(--grid-max-size);
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            cursor: grab;
+            /* Effet de bordure quantique subtile */
+            box-shadow: 0 0 60px rgba(0, 150, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        /* Style quand on drag la grille */
+        #gridCanvas:active {
+            cursor: grabbing;
+        }
+        
+        /* === LAYER MOBILE: QUANTUM GHOST (4 coins) === */
+        /* UI mobile: 4 divs fixes aux coins, opacity 0→1 au swipe */
+        .ghost-ui {
+            position: fixed;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity var(--transition-quantum);
+            backdrop-filter: blur(16px);
+            background: rgba(0, 10, 30, 0.15);
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 150, 255, 0.15);
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-size: 12px;
+            line-height: 1.3;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            /* Animation d'apparition */
+            animation: ghostPulse 3s infinite alternate;
+        }
+        
+        /* Animation pulse subtile pour les ghost UI */
+        @keyframes ghostPulse {
+            0% { box-shadow: 0 4px 20px rgba(0, 150, 255, 0.15); }
+            100% { box-shadow: 0 4px 30px rgba(0, 200, 255, 0.25); }
+        }
+        
+        /* Positionnement des 4 coins */
+        .top-left-ghost {
+            top: 8px;
+            left: 8px;
+            min-width: 60px;
+        }
+        
+        .top-right-ghost {
+            top: 8px;
+            right: 8px;
+            text-align: right;
+        }
+        
+        .bottom-left-ghost {
+            bottom: 8px;
+            left: 8px;
+        }
+        
+        .bottom-right-ghost {
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        /* Icons interactives dans le coin BR */
+        .icon-btn {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            user-select: none;
+        }
+        
+        .icon-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* === LAYER PC: NEBULA COMMAND CENTER (6 orbites) === */
+        /* UI PC: 6 divs orbitales transparentes autour de la grille */
+        .orbit-layer {
+            position: fixed;
+            pointer-events: auto;
+            backdrop-filter: blur(24px);
+            background: rgba(0, 20, 60, 0.08);
+            border: 1px solid rgba(100, 200, 255, 0.15);
+            box-shadow: 
+                0 0 40px rgba(0, 150, 255, 0.1),
+                inset 0 0 40px rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 12px;
+            color: white;
+            z-index: 50;
+            /* Animation orbitale subtile (désactivée par défaut) */
+            /* animation: nebulaOrbit 60s linear infinite; */
+            transition: transform var(--transition-nebula);
+            opacity: 0.9;
+        }
+        
+        /* Animation orbitale (pour effet sci-fi) */
+        @keyframes nebulaOrbit {
+            0% { transform: rotateY(0deg) rotateX(5deg) translateZ(20px); }
+            100% { transform: rotateY(360deg) rotateX(5deg) translateZ(20px); }
+        }
+        
+        /* Positionnement des 6 orbites */
+        .orbit-stats {
+            /* 12h - en haut centre */
+            top: 2%;
+            left: 50%;
+            transform: translateX(-50%) rotateX(10deg);
+            width: 300px;
+            height: 80px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .orbit-research {
+            /* 2h - haut droite */
+            top: 10%;
+            right: 2%;
+            width: var(--orbit-ui-width);
+            height: 300px;
+            transform: rotateY(-10deg);
+            overflow-y: auto;
+        }
+        
+        .orbit-machines {
+            /* 4h - milieu droite */
+            top: 50%;
+            right: 2%;
+            transform: translateY(-50%) rotateY(-15deg);
+            width: var(--orbit-ui-width);
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .orbit-economy {
+            /* 6h - bas droite */
+            bottom: 10%;
+            right: 2%;
+            width: var(--orbit-ui-width);
+            height: 200px;
+            transform: rotateY(-10deg);
+        }
+        
+        .orbit-ai {
+            /* 8h - bas gauche */
+            bottom: 10%;
+            left: 2%;
+            width: var(--orbit-ui-width);
+            height: 200px;
+            transform: rotateY(10deg);
+        }
+        
+        .orbit-alerts {
+            /* 10h - milieu gauche */
+            top: 50%;
+            left: 2%;
+            transform: translateY(-50%) rotateY(15deg);
+            width: var(--orbit-ui-width);
+            height: 300px;
+        }
+        
+        /* === COMPOSANTS UI COMMUNS === */
+        /* Cartes machines pour drag & drop */
+        .machine-card {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(0, 20, 40, 0.6);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 8px;
+            cursor: grab;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-nebula);
+        }
+        
+        /* Effet hover magnétique (PC uniquement) */
+        .machine-card:hover {
+            transform: translateZ(40px) scale(1.05) rotateY(10deg);
+            box-shadow: 0 20px 60px rgba(0, 255, 255, 0.3);
+            border-color: var(--quantum-cyan);
+        }
+        
+        /* Effet de lumière qui traverse la carte */
+        .machine-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .machine-card:hover::before {
+            left: 100%;
+        }
+        
+        /* Bulles contextuelles (mobile + PC) */
+        .context-bubble {
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--quantum-cyan);
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, -110%);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .context-bubble.show {
+            opacity: 1;
+            transform: translate(-50%, -100%);
+        }
+        
+        /* === MEDIA QUERIES POUR RESPONSIVE === */
+        /* Mobile detection: moins de 768px ou device tactile */
+        @media (max-width: 767px), (hover: none) and (pointer: coarse) {
+            .orbit-layer {
+                display: none !important; /* Cache UI PC sur mobile */
+            }
+            
+            .ghost-ui {
+                opacity: 1; /* Montre UI mobile par défaut */
+            }
+            
+            #gridCanvas {
+                width: 95vw;
+                height: 95vh;
+            }
+        }
+        
+        /* Desktop: large écran, montre UI PC */
+        @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+            .ghost-ui {
+                display: none !important; /* Cache UI mobile sur PC */
+            }
+            
+            .orbit-layer {
+                display: block; /* Montre UI PC */
+            }
+            
+            /* Effet 3D sur la grille pour PC */
+            #gridCanvas {
+                transform: translate(-50%, -50%) rotateX(5deg);
+                transition: transform 0.5s;
+            }
+        }
+        
+        /* Ultra-wide screens (3440px+) */
+        @media (min-width: 3440px) {
+            .orbit-stats {
+                width: 500px; /* Stats plus larges */
+            }
+            
+            .orbit-layer {
+                width: 280px; /* Orbites plus larges */
+            }
+        }
+        
+        /* === ANIMATIONS DE PARTICULES QUANTIQUES === */
+        /* Trail de particules au touch/click */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, var(--quantum-cyan), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            animation: quantumFade 0.6s ease-out forwards;
+        }
+        
+        @keyframes quantumFade {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0) translate(var(--tx, 20px), var(--ty, -20px)); opacity: 0; }
+        }
+        
+        /* Glow des machines sélectionnées */
+        .machine-glow {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.3), transparent);
+            border-radius: 50%;
+            z-index: -1;
+            animation: machinePulse 2s infinite;
+        }
+        
+        @keyframes machinePulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        /* === TOOLTIPS ET INFOBULLES === */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 10, 30, 0.95);
+            border: 1px solid var(--quantum-cyan);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 11px;
+            max-width: 200px;
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        /* === LOADING SCREEN (initial) === */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--quantum-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000;
+            transition: opacity 1s;
+        }
+        
+        .quantum-loader {
+            width: 60px;
+            height: 60px;
+            border: 3px solid transparent;
+            border-top: 3px solid var(--quantum-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* === MENU RADIAL (clic droit PC) === */
+        .radial-menu {
+            position: fixed;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(0, 20, 40, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .radial-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 40, 80, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .radial-option:hover {
+            background: rgba(0, 100, 200, 0.9);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- === LOADING SCREEN INITIAL === -->
+    <!-- Écran de chargement affiché 1.5s pour PWA et assets -->
+    <div id="loadingScreen">
+        <div class="quantum-loader"></div>
+        <div style="margin-top: 20px; font-size: 14px; color: var(--quantum-cyan);">
+            Initialisation de l'usine quantique...
+        </div>
+        <div style="font-size: 10px; opacity: 0.7; margin-top: 10px;">
+            Singularity Edition v7.0
+        </div>
+    </div>
 
+    <!-- === CONTAINER PRINCIPAL DU JEU === -->
+    <div id="gameContainer">
+        <!-- Canvas principal pour la grille et rendu -->
+        <canvas id="gridCanvas"></canvas>
+        
+        <!-- === UI MOBILE: QUANTUM GHOST (4 coins) === -->
+        <!-- Coin TL: Ressources principales -->
+        <div class="ghost-ui top-left-ghost" id="ghostResources">
+            <div>🧱 <span id="matterDisplay">0</span></div>
+            <div>⚡ <span id="energyDisplay">0</span></div>
+            <div>💰 <span id="moneyDisplay">0</span></div>
+        </div>
+        
+        <!-- Coin TR: Niveau et progression -->
+        <div class="ghost-ui top-right-ghost" id="ghostProgress">
+            <div>Niv. <span id="levelDisplay">1</span></div>
+            <div>🎯 <span id="goalsDisplay">0/5</span></div>
+        </div>
+        
+        <!-- Coin BL: Temps et pollution -->
+        <div class="ghost-ui bottom-left-ghost" id="ghostStats">
+            <div>⏱️ <span id="timeDisplay">00:00</span></div>
+            <div>⚠️ <span id="pollutionDisplay">0.0</span></div>
+        </div>
+        
+        <!-- Coin BR: Actions rapides -->
+        <div class="ghost-ui bottom-right-ghost" id="ghostActions">
+            <div class="icon-btn" data-action="menu" title="Menu">⚙️</div>
+            <div class="icon-btn" data-action="market" title="Marché">💰</div>
+            <div class="icon-btn" data-action="research" title="Recherche">🔬</div>
+        </div>
+        
+        <!-- === UI PC: NEBULA COMMAND CENTER (6 orbites) === -->
+        <!-- Orbite 12h: Stats globales -->
+        <div class="orbit-layer orbit-stats" id="orbitStats">
+            <!-- Rempli dynamiquement par JS -->
+        </div>
+        
+        <!-- Orbite 2h: Arbre de recherche -->
+        <div class="orbit-layer orbit-research" id="orbitResearch">
+            <div style="font-size: 12px; margin-bottom: 10px; color: var(--quantum-cyan);">
+                Recherche Quantique
+            </div>
+            <div id="researchTree"></div>
+        </div>
+        
+        <!-- Orbite 4h: Machines disponibles -->
+        <div class="orbit-layer orbit-machines" id="orbitMachines">
+            <div style="font-size: 12px; margin-bottom: 10px; color: var(--quantum-cyan);">
+                Machines (T1)
+            </div>
+            <div id="machineList"></div>
+        </div>
+        
+        <!-- Orbite 6h: Économie et marché -->
+        <div class="orbit-layer orbit-economy" id="orbitEconomy">
+            <div style="font-size: 12px; margin-bottom: 10px; color: var(--quantum-cyan);">
+                Marché Quantique
+            </div>
+            <div id="marketPrices"></div>
+        </div>
+        
+        <!-- Orbite 8h: IA Assistante -->
+        <div class="orbit-layer orbit-ai" id="orbitAI">
+            <div style="font-size: 12px; margin-bottom: 10px; color: var(--quantum-cyan);">
+                IA Quantique
+            </div>
+            <div id="aiSuggestions"></div>
+        </div>
+        
+        <!-- Orbite 10h: Alertes et événements -->
+        <div class="orbit-layer orbit-alerts" id="orbitAlerts">
+            <div style="font-size: 12px; margin-bottom: 10px; color: var(--quantum-cyan);">
+                Alertes
+            </div>
+            <div id="alertList"></div>
+        </div>
+        
+        <!-- === BULLES CONTEXTUELLES (machine info) === -->
+        <div class="context-bubble" id="contextBubble"></div>
+        
+        <!-- === MENU RADIAL (clic droit PC) === -->
+        <div class="radial-menu" id="radialMenu">
+            <div class="radial-option" data-action="info">🔍</div>
+            <div class="radial-option" data-action="rotate">↕️</div>
+            <div class="radial-option" data-action="upgrade">⚡</div>
+            <div class="radial-option" data-action="sell">💸</div>
+            <div class="radial-option" data-action="connect">🔗</div>
+            <div class="radial-option" data-action="stats">📋</div>
+        </div>
+    </div>
+
+    <!-- === SCRIPT JAVASCRIPT PRINCIPAL === -->
+    <!-- Tous le code JS vanilla en un seul script, ultra-commenté -->
+    <script>
+    // === SECTION 1: CONSTANTS & DATA (Données statiques) ===
+    // Toutes les constantes, configurations et données du jeu
+    // Objectif: Data-driven pour faciliter l'extension
+    
+    /* Constantes de configuration globale */
+    const CONFIG = {
+        VERSION: "7.0.0",
+        DEBUG: true, // Mode debug (affichage FPS, logs)
+        
+        /* Configuration grille */
+        GRID: {
+            INITIAL_SIZE: 10, // Taille initiale 10x10
+            CELL_SIZE: 40, // Pixels par cellule
+            MAX_SIZE: 100, // Taille max après upgrades
+            ZOOM_MIN: 0.5,
+            ZOOM_MAX: 3.0,
+            ZOOM_SPEED: 0.1
+        },
+        
+        /* Configuration performance */
+        PERFORMANCE: {
+            TARGET_FPS: 60,
+            UPDATE_INTERVAL: 1000 / 60, // ~16.67ms par frame
+            AUTO_SAVE_INTERVAL: 30000, // 30 secondes
+            PARTICLES_MAX: 500 // Max particules simultanées
+        },
+        
+        /* Configuration gameplay */
+        GAMEPLAY: {
+            XP_BASE: 100, // XP nécessaire niveau 1->2
+            XP_MULTIPLIER: 1.5, // Multiplicateur par niveau
+            ENTROPY_GAIN_RATE: 0.01, // Gain entropie par seconde
+            PARADOX_THRESHOLD: 90, // Seuil paradoxe (90%)
+            POLLUTION_THRESHOLD: 5.0 // Seuil pollution critique
+        }
+    };
+    
+    /* Ressources du jeu (9 ressources principales) */
+    const RESOURCES = {
+        energy: { 
+            id: "energy",
+            name: "Énergie", 
+            emoji: "⚡", 
+            rate: 0, 
+            total: 100, 
+            max: 1000,
+            color: "#FFFF00" 
+        },
+        matter: { 
+            id: "matter", 
+            name: "Matière", 
+            emoji: "🧱", 
+            rate: 0, 
+            total: 50, 
+            max: 500,
+            color: "#888888" 
+        },
+        money: { 
+            id: "money", 
+            name: "Argent", 
+            emoji: "💰", 
+            rate: 0, 
+            total: 100, 
+            max: 10000,
+            color: "#FFD700" 
+        },
+        trash: { 
+            id: "trash", 
+            name: "Déchets", 
+            emoji: "🗑️", 
+            rate: 0, 
+            total: 0, 
+            max: 1000,
+            color: "#8B4513" 
+        },
+        research: { 
+            id: "research", 
+            name: "Recherche", 
+            emoji: "🔬", 
+            rate: 0, 
+            total: 0, 
+            max: 1000,
+            color: "#00FF00" 
+        },
+        entropy: { 
+            id: "entropy", 
+            name: "Entropie", 
+            emoji: "🌪️", 
+            value: 0, // 0-100%
+            gain: 0,
+            color: "#FF00FF" 
+        },
+        paradox: { 
+            id: "paradox", 
+            name: "Paradoxe", 
+            emoji: "👁️", 
+            count: 0,
+            color: "#FF0000" 
+        },
+        consciousness: { 
+            id: "consciousness", 
+            name: "Conscience", 
+            emoji: "🧠", 
+            rate: 0, 
+            total: 0,
+            color: "#00FFFF" 
+        },
+        singularity: { 
+            id: "singularity", 
+            name: "Singularité", 
+            emoji: "⚫", 
+            points: 0,
+            color: "#000000" 
+        }
+    };
+    
+    /* Machines du jeu (25 machines V1, data-driven) */
+    const MACHINES = [
+        // === TIER 1: MACHINES DE BASE (Niv 1-10) ===
+        {
+            id: "extractor",
+            tier: 1,
+            name: "Extracteur Quantique",
+            emoji: "⛏️",
+            description: "Extrait la matière brute du vide quantique",
+            cost: { energy: 120, matter: 50 },
+            production: { matter: 1.8 },
+            consumption: { energy: 0.5 },
+            pollution: 0.1,
+            maintenance: 0.05,
+            ports: ["S", "E"], // Directions: N, S, E, W
+            size: 1, // 1x1 cellule
+            unlockLevel: 1,
+            rotation: 0, // 0=North, 1=East, 2=South, 3=West
+            color: "#8B4513"
+        },
+        {
+            id: "plasma_generator",
+            tier: 1,
+            name: "Générateur Plasma",
+            emoji: "⚡",
+            description: "Génère de l'énergie à partir de plasma",
+            cost: { matter: 100, money: 50 },
+            production: { energy: 3.5 },
+            pollution: 0.2,
+            maintenance: 0.1,
+            ports: ["N", "S", "E", "W"],
+            size: 1,
+            unlockLevel: 2,
+            rotation: 0,
+            color: "#FFD700"
+        },
+        {
+            id: "conveyor",
+            tier: 1,
+            name: "Convoyeur",
+            emoji: "➡️",
+            description: "Transporte les ressources entre machines",
+            cost: { matter: 20 },
+            speed: 1.0,
+            ports: ["N", "S"],
+            size: 1,
+            unlockLevel: 1,
+            rotation: 0,
+            color: "#888888"
+        },
+        {
+            id: "silo",
+            tier: 1,
+            name: "Silo de Stockage",
+            emoji: "📦",
+            description: "Stocke les ressources",
+            cost: { matter: 80, money: 30 },
+            capacity: { matter: 1000, energy: 500, trash: 500 },
+            ports: ["N", "S", "E", "W"],
+            size: 1,
+            unlockLevel: 2,
+            rotation: 0,
+            color: "#4682B4"
+        },
+        {
+            id: "seller",
+            tier: 1,
+            name: "Vendeur Automatique",
+            emoji: "💰",
+            description: "Vend les ressources contre de l'argent",
+            cost: { matter: 150, energy: 50 },
+            conversion: { matter: 1, money: 0.5 },
+            pollution: 0.05,
+            ports: ["N"],
+            size: 1,
+            unlockLevel: 3,
+            rotation: 0,
+            color: "#32CD32"
+        },
+        
+        // === TIER 2: OPTIMISATION (Niv 11-25) ===
+        {
+            id: "refiner",
+            tier: 2,
+            name: "Raffinerie",
+            emoji: "🏭",
+            description: "Raffine la matière brute en qualité supérieure",
+            cost: { matter: 300, energy: 150, money: 100 },
+            production: { matter: 0.8 }, // Moins de matière mais qualité supérieure
+            consumption: { matter: 1.5, energy: 2.0 },
+            pollution: 0.4,
+            maintenance: 0.15,
+            quality: 1.5, // Multiplicateur qualité
+            ports: ["N", "S"],
+            size: 2, // 2x2 cellules
+            unlockLevel: 11,
+            rotation: 0,
+            color: "#B8860B"
+        },
+        {
+            id: "solar_panel",
+            tier: 2,
+            name: "Panneau Solaire",
+            emoji: "☀️",
+            description: "Génère de l'énergie propre",
+            cost: { matter: 200, money: 150 },
+            production: { energy: 1.0 },
+            pollution: -0.1, // Négatif = réduit la pollution
+            maintenance: 0.02,
+            ports: ["S"],
+            size: 1,
+            unlockLevel: 12,
+            rotation: 0,
+            color: "#FF8C00"
+        },
+        {
+            id: "lab",
+            tier: 2,
+            name: "Laboratoire de Recherche",
+            emoji: "🔬",
+            description: "Génère des points de recherche",
+            cost: { matter: 400, energy: 200, money: 300 },
+            production: { research: 0.5 },
+            consumption: { energy: 1.0, money: 0.2 },
+            pollution: 0.1,
+            maintenance: 0.2,
+            ports: ["N", "S", "E", "W"],
+            size: 2,
+            unlockLevel: 15,
+            rotation: 0,
+            color: "#00FF00"
+        },
+        {
+            id: "purifier",
+            tier: 2,
+            name: "Purificateur",
+            emoji: "🌱",
+            description: "Réduit la pollution et les déchets",
+            cost: { matter: 250, energy: 100, money: 200 },
+            production: { trash: -0.8 }, // Négatif = consomme les déchets
+            consumption: { energy: 1.5 },
+            pollution: -0.3,
+            maintenance: 0.1,
+            ports: ["N", "S"],
+            size: 1,
+            unlockLevel: 18,
+            rotation: 0,
+            color: "#228B22"
+        },
+        
+        // ... 16 autres machines pour atteindre 25 (espace pour extension)
+    ];
+    
+    /* Arbre de recherche (branches principales) */
+    const RESEARCH_TREE = [
+        {
+            id: "energy_t1",
+            name: "Énergie T1",
+            description: "Débloque les générateurs avancés",
+            cost: { research: 100 },
+            unlocks: ["plasma_generator", "solar_panel"],
+            prerequisites: [],
+            tier: 1,
+            completed: false
+        },
+        {
+            id: "automation_t1",
+            name: "Automatisation T1",
+            description: "Débloque les convoyeurs avancés",
+            cost: { research: 150 },
+            unlocks: ["conveyor_fast"],
+            prerequisites: ["energy_t1"],
+            tier: 1,
+            completed: false
+        },
+        {
+            id: "recycling_t1",
+            name: "Recyclage T1",
+            description: "Débloque les purificateurs",
+            cost: { research: 200 },
+            unlocks: ["purifier"],
+            prerequisites: [],
+            tier: 1,
+            completed: false
+        },
+        {
+            id: "quantum_t1",
+            name: "Quantique T1",
+            description: "Introduction à la physique quantique",
+            cost: { research: 300 },
+            unlocks: ["quantum_extractor"],
+            prerequisites: ["energy_t1", "automation_t1"],
+            tier: 2,
+            completed: false
+        }
+    ];
+    
+    /* Objectifs et achievements */
+    const ACHIEVEMENTS = [
+        { id: "first_machine", name: "Première Machine", description: "Place ta première machine", reward: { money: 100 }, completed: false },
+        { id: "first_sale", name: "Première Vente", description: "Vends ta première ressource", reward: { money: 50 }, completed: false },
+        { id: "level_5", name: "Niveau 5", description: "Atteins le niveau 5", reward: { research: 50 }, completed: false },
+        { id: "pollution_control", name: "Contrôle de Pollution", description: "Maintiens la pollution en dessous de 1.0 pendant 5min", reward: { research: 100 }, completed: false },
+        { id: "research_first", name: "Première Recherche", description: "Complète ta première recherche", reward: { research: 50 }, completed: false }
+    ];
+    
+    // === SECTION 2: CORE ENGINE (Moteur principal) ===
+    // Variables d'état du jeu et fonctions centrales
+    
+    /* État global du jeu */
+    const GameState = {
+        // Ressources (liées à l'objet RESOURCES mais avec valeurs actuelles)
+        resources: JSON.parse(JSON.stringify(RESOURCES)), // Deep copy
+        
+        // Grille et machines placées
+        grid: {
+            width: CONFIG.GRID.INITIAL_SIZE,
+            height: CONFIG.GRID.INITIAL_SIZE,
+            cells: Array(CONFIG.GRID.INITIAL_SIZE * CONFIG.GRID.INITIAL_SIZE).fill(null),
+            zoom: 1.0,
+            offset: { x: 0, y: 0 },
+            selectedCell: null,
+            hoveredCell: null
+        },
+        
+        // Progression joueur
+        player: {
+            level: 1,
+            xp: 0,
+            xpToNext: CONFIG.GAMEPLAY.XP_BASE,
+            totalMoney: 0,
+            totalPlayTime: 0,
+            lastSaveTime: Date.now()
+        },
+        
+        // Machines placées
+        placedMachines: [],
+        
+        // Recherche
+        research: RESEARCH_TREE.map(r => ({ ...r, progress: 0 })),
+        
+        // Achievements
+        achievements: ACHIEVEMENTS.map(a => ({ ...a })),
+        
+        // Entropie et paradoxes
+        entropyEvents: [],
+        activeParadoxes: [],
+        
+        // Statistiques
+        stats: {
+            machinesBuilt: 0,
+            resourcesProduced: { matter: 0, energy: 0, money: 0 },
+            resourcesSold: 0,
+            pollutionCleaned: 0,
+            paradoxesTriggered: 0
+        },
+        
+        // UI state
+        ui: {
+            selectedMachine: null,
+            placingMachine: null,
+            rotation: 0,
+            showGrid: true,
+            showConnections: true,
+            showHeatmap: false
+        },
+        
+        // Performance tracking
+        performance: {
+            fps: 0,
+            lastFrameTime: 0,
+            frameCount: 0,
+            lastFpsUpdate: 0
+        },
+        
+        // Input state
+        input: {
+            mouse: { x: 0, y: 0, down: false, rightDown: false },
+            touch: { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0 },
+            keys: {}
+        },
+        
+        // Time control
+        time: {
+            deltaTime: 0,
+            lastTime: 0,
+            gameTime: 0,
+            paused: false,
+            timeScale: 1.0
+        }
+    };
+    
+    /* Canvas et contexte de rendu */
+    let canvas, ctx;
+    
+    /* Éléments UI */
+    const UI = {
+        // Éléments mobile
+        ghostResources: null,
+        ghostProgress: null,
+        ghostStats: null,
+        ghostActions: null,
+        
+        // Éléments PC
+        orbitStats: null,
+        orbitResearch: null,
+        orbitMachines: null,
+        orbitEconomy: null,
+        orbitAI: null,
+        orbitAlerts: null,
+        
+        // Éléments communs
+        contextBubble: null,
+        radialMenu: null,
+        loadingScreen: null,
+        
+        // Canvas
+        gridCanvas: null
+    };
+    
+    /* Détection plateforme */
+    const PLATFORM = {
+        isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+        isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+        isDesktop: !(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) && !('ontouchstart' in window),
+        screenWidth: window.innerWidth,
+        screenHeight: window.innerHeight
+    };
+    
+    /* Particules système */
+    const Particles = {
+        list: [],
+        lastSpawn: 0,
+        
+        add: function(x, y, type = "quantum") {
+            if (this.list.length >= CONFIG.PERFORMANCE.PARTICLES_MAX) return;
+            
+            const particle = {
+                x, y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 1.0,
+                decay: 0.02 + Math.random() * 0.03,
+                size: 2 + Math.random() * 4,
+                type,
+                color: type === "quantum" ? "#00ffff" : 
+                       type === "paradox" ? "#ff00ff" : 
+                       type === "money" ? "#ffd700" : "#ffffff"
+            };
+            
+            this.list.push(particle);
+        },
+        
+        update: function(deltaTime) {
+            for (let i = this.list.length - 1; i >= 0; i--) {
+                const p = this.list[i];
+                p.x += p.vx * deltaTime;
+                p.y += p.vy * deltaTime;
+                p.life -= p.decay * deltaTime * 60;
+                
+                if (p.life <= 0) {
+                    this.list.splice(i, 1);
+                }
+            }
+        },
+        
+        render: function(ctx) {
+            ctx.save();
+            for (const p of this.list) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+    };
+    
+    // === SECTION 3: GRID SYSTEM (Système de grille) ===
+    // Gestion de la grille, placement des machines, connexions
+    
+    /* Initialise le système de grille */
+    function initGrid() {
+        // Crée la grille initiale
+        GameState.grid.cells = Array(GameState.grid.width * GameState.grid.height).fill(null);
+        
+        // Place quelques machines de départ pour le tutorial
+        placeInitialMachines();
+    }
+    
+    /* Place les machines initiales pour le tutorial */
+    function placeInitialMachines() {
+        // Extracteur au centre
+        const centerX = Math.floor(GameState.grid.width / 2);
+        const centerY = Math.floor(GameState.grid.height / 2);
+        
+        placeMachine("extractor", centerX, centerY, 0);
+        
+        // Générateur plasma à droite
+        placeMachine("plasma_generator", centerX + 2, centerY, 0);
+        
+        // Silo en bas
+        placeMachine("silo", centerX, centerY + 2, 0);
+        
+        // Vendeur à gauche
+        placeMachine("seller", centerX - 2, centerY, 0);
+    }
+    
+    /* Place une machine sur la grille */
+    function placeMachine(machineId, x, y, rotation) {
+        // Vérifie les limites
+        if (x < 0 || x >= GameState.grid.width || y < 0 || y >= GameState.grid.height) {
+            console.warn("Placement hors limites:", x, y);
+            return false;
+        }
+        
+        // Récupère la définition de la machine
+        const machineDef = MACHINES.find(m => m.id === machineId);
+        if (!machineDef) {
+            console.error("Machine inconnue:", machineId);
+            return false;
+        }
+        
+        // Vérifie si le joueur a le niveau nécessaire
+        if (machineDef.unlockLevel > GameState.player.level) {
+            showMessage(`Niveau ${machineDef.unlockLevel} requis!`);
+            return false;
+        }
+        
+        // Vérifie le coût
+        if (!canAfford(machineDef.cost)) {
+            showMessage("Ressources insuffisantes!");
+            return false;
+        }
+        
+        // Vérifie si la cellule est libre
+        const cellIndex = y * GameState.grid.width + x;
+        if (GameState.grid.cells[cellIndex] !== null) {
+            showMessage("Cellule occupée!");
+            return false;
+        }
+        
+        // Paye le coût
+        payCost(machineDef.cost);
+        
+        // Crée l'instance de machine
+        const machine = {
+            id: machineId,
+            x, y,
+            rotation: rotation || 0,
+            level: 1,
+            efficiency: 1.0,
+            lastMaintenance: GameState.time.gameTime,
+            connections: [],
+            stats: {
+                totalProduced: 0,
+                totalConsumed: 0,
+                uptime: 0
+            }
+        };
+        
+        // Ajoute à la grille
+        GameState.grid.cells[cellIndex] = machine;
+        GameState.placedMachines.push(machine);
+        
+        // Met à jour les statistiques
+        GameState.stats.machinesBuilt++;
+        
+        // Déclenche l'achievement "première machine"
+        if (!GameState.achievements.find(a => a.id === "first_machine").completed) {
+            completeAchievement("first_machine");
+        }
+        
+        // Ajoute des particules
+        for (let i = 0; i < 20; i++) {
+            const px = (x + 0.5) * CONFIG.GRID.CELL_SIZE;
+            const py = (y + 0.5) * CONFIG.GRID.CELL_SIZE;
+            Particles.add(px, py, "quantum");
+        }
+        
+        // Joue un son (si implémenté)
+        playSound("place");
+        
+        console.log(`Machine placée: ${machineDef.name} à (${x}, ${y})`);
+        return true;
+    }
+    
+    /* Vérifie si le joueur peut payer un coût */
+    function canAfford(cost) {
+        for (const [resource, amount] of Object.entries(cost)) {
+            if (GameState.resources[resource].total < amount) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /* Paye un coût (déduit les ressources) */
+    function payCost(cost) {
+        for (const [resource, amount] of Object.entries(cost)) {
+            GameState.resources[resource].total = Math.max(0, GameState.resources[resource].total - amount);
+        }
+    }
+    
+    /* Fait tourner une machine */
+    function rotateMachine(x, y) {
+        const cellIndex = y * GameState.grid.width + x;
+        const machine = GameState.grid.cells[cellIndex];
+        
+        if (machine) {
+            machine.rotation = (machine.rotation + 1) % 4;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /* Vends une machine (récupère 50% du coût) */
+    function sellMachine(x, y) {
+        const cellIndex = y * GameState.grid.width + x;
+        const machine = GameState.grid.cells[cellIndex];
+        
+        if (!machine) return false;
+        
+        const machineDef = MACHINES.find(m => m.id === machine.id);
+        if (!machineDef) return false;
+        
+        // Rembourse 50% du coût
+        for (const [resource, amount] of Object.entries(machineDef.cost)) {
+            const refund = Math.floor(amount * 0.5);
+            GameState.resources[resource].total += refund;
+        }
+        
+        // Supprime la machine
+        GameState.grid.cells[cellIndex] = null;
+        const machineIndex = GameState.placedMachines.indexOf(machine);
+        if (machineIndex > -1) {
+            GameState.placedMachines.splice(machineIndex, 1);
+        }
+        
+        // Particules de vente
+        for (let i = 0; i < 15; i++) {
+            const px = (x + 0.5) * CONFIG.GRID.CELL_SIZE;
+            const py = (y + 0.5) * CONFIG.GRID.CELL_SIZE;
+            Particles.add(px, py, "money");
+        }
+        
+        playSound("sell");
+        return true;
+    }
+    
+    /* Upgrade une machine (améliore ses stats) */
+    function upgradeMachine(x, y) {
+        const cellIndex = y * GameState.grid.width + x;
+        const machine = GameState.grid.cells[cellIndex];
+        
+        if (!machine) return false;
+        
+        const machineDef = MACHINES.find(m => m.id === machine.id);
+        if (!machineDef) return false;
+        
+        // Coût de l'upgrade: 150% du coût original
+        const upgradeCost = {};
+        for (const [resource, amount] of Object.entries(machineDef.cost)) {
+            upgradeCost[resource] = Math.floor(amount * 1.5);
+        }
+        
+        if (!canAfford(upgradeCost)) {
+            showMessage("Ressources insuffisantes pour l'upgrade!");
+            return false;
+        }
+        
+        // Paye le coût
+        payCost(upgradeCost);
+        
+        // Upgrade la machine
+        machine.level++;
+        machine.efficiency *= 1.2; // +20% d'efficacité par niveau
+        
+        // Particules d'upgrade
+        for (let i = 0; i < 25; i++) {
+            const px = (x + 0.5) * CONFIG.GRID.CELL_SIZE;
+            const py = (y + 0.5) * CONFIG.GRID.CELL_SIZE;
+            Particles.add(px, py, "quantum");
+        }
+        
+        playSound("upgrade");
+        showMessage(`${machineDef.name} niveau ${machine.level}!`);
+        return true;
+    }
+    
+    /* Calcule la production totale par seconde */
+    function calculateProduction() {
+        // Réinitialise les taux
+        for (const resource of Object.values(GameState.resources)) {
+            if (resource.rate !== undefined) resource.rate = 0;
+        }
+        
+        let totalPollution = 0;
+        
+        // Pour chaque machine placée
+        for (const machine of GameState.placedMachines) {
+            const machineDef = MACHINES.find(m => m.id === machine.id);
+            if (!machineDef) continue;
+            
+            // Applique l'efficacité
+            const efficiency = machine.efficiency;
+            
+            // Production
+            if (machineDef.production) {
+                for (const [resource, amount] of Object.entries(machineDef.production)) {
+                    if (GameState.resources[resource]) {
+                        // Si la production est négative (consommation de déchets/pollution)
+                        GameState.resources[resource].rate += amount * efficiency;
+                        
+                        // Met à jour les stats de production
+                        if (amount > 0) {
+                            GameState.stats.resourcesProduced[resource] = 
+                                (GameState.stats.resourcesProduced[resource] || 0) + (amount * efficiency / 60);
+                        }
+                    }
+                }
+            }
+            
+            // Consommation
+            if (machineDef.consumption) {
+                for (const [resource, amount] of Object.entries(machineDef.consumption)) {
+                    if (GameState.resources[resource]) {
+                        GameState.resources[resource].rate -= amount * efficiency;
+                    }
+                }
+            }
+            
+            // Pollution
+            if (machineDef.pollution) {
+                totalPollution += machineDef.pollution * efficiency;
+            }
+        }
+        
+        // Met à jour la pollution totale
+        GameState.resources.trash.rate += totalPollution * 0.5; // 50% de la pollution devient déchets
+        
+        // Calcule l'entropie (augmente avec les déchets et le temps)
+        const entropyGain = (GameState.resources.trash.total / 1000) * CONFIG.GAMEPLAY.ENTROPY_GAIN_RATE;
+        GameState.resources.entropy.gain = entropyGain;
+        GameState.resources.entropy.value = Math.min(100, GameState.resources.entropy.value + entropyGain);
+        
+        // Déclenche un paradoxe si l'entropie dépasse le seuil
+        if (GameState.resources.entropy.value >= CONFIG.GAMEPLAY.PARADOX_THRESHOLD && 
+            Math.random() < 0.001) { // 0.1% de chance par frame
+            triggerParadox();
+        }
+    }
+    
+    /* Déclenche un événement paradoxe */
+    function triggerParadox() {
+        GameState.resources.paradox.count++;
+        GameState.stats.paradoxesTriggered++;
+        
+        const paradoxTypes = [
+            { name: "Boost Quantique", effect: "x2 production", duration: 30, multiplier: 2.0 },
+            { name: "Panne Chaotique", effect: "-80% production", duration: 60, multiplier: 0.2 },
+            { name: "Machine Fantôme", effect: "+1 machine gratuite", duration: 0, freeMachine: true },
+            { name: "Emprunt Quantique", effect: "+$1000 à rembourser x2", duration: 0, loan: 1000 }
+        ];
+        
+        const paradox = paradoxTypes[Math.floor(Math.random() * paradoxTypes.length)];
+        paradox.startTime = GameState.time.gameTime;
+        GameState.activeParadoxes.push(paradox);
+        
+        // Applique l'effet immédiat
+        if (paradox.freeMachine) {
+            // Trouve une machine aléatoire débloquée
+            const unlockedMachines = MACHINES.filter(m => m.unlockLevel <= GameState.player.level);
+            if (unlockedMachines.length > 0) {
+                const freeMachine = unlockedMachines[Math.floor(Math.random() * unlockedMachines.length)];
+                // Trouve une cellule libre
+                for (let i = 0; i < 100; i++) {
+                    const x = Math.floor(Math.random() * GameState.grid.width);
+                    const y = Math.floor(Math.random() * GameState.grid.height);
+                    const cellIndex = y * GameState.grid.width + x;
+                    if (GameState.grid.cells[cellIndex] === null) {
+                        placeMachine(freeMachine.id, x, y, Math.floor(Math.random() * 4));
+                        break;
+                    }
+                }
+            }
+        } else if (paradox.loan) {
+            GameState.resources.money.total += paradox.loan;
+            // Le remboursement sera géré plus tard
+        }
+        
+        showMessage(`PARADOXE: ${paradox.name}! ${paradox.effect}`, "warning");
+        playSound("paradox");
+        
+        // Réduit l'entropie après un paradoxe
+        GameState.resources.entropy.value = Math.max(0, GameState.resources.entropy.value - 30);
+    }
+    
+    // === SECTION 4: UI SYSTEMS (Systèmes d'interface) ===
+    // Gestion de l'UI mobile et PC
+    
+    /* Initialise l'UI selon la plateforme */
+    function initUI() {
+        // Récupère les éléments UI
+        UI.ghostResources = document.getElementById('ghostResources');
+        UI.ghostProgress = document.getElementById('ghostProgress');
+        UI.ghostStats = document.getElementById('ghostStats');
+        UI.ghostActions = document.getElementById('ghostActions');
+        
+        UI.orbitStats = document.getElementById('orbitStats');
+        UI.orbitResearch = document.getElementById('orbitResearch');
+        UI.orbitMachines = document.getElementById('orbitMachines');
+        UI.orbitEconomy = document.getElementById('orbitEconomy');
+        UI.orbitAI = document.getElementById('orbitAI');
+        UI.orbitAlerts = document.getElementById('orbitAlerts');
+        
+        UI.contextBubble = document.getElementById('contextBubble');
+        UI.radialMenu = document.getElementById('radialMenu');
+        UI.loadingScreen = document.getElementById('loadingScreen');
+        UI.gridCanvas = document.getElementById('gridCanvas');
+        
+        // Initialise le canvas
+        canvas = UI.gridCanvas;
+        ctx = canvas.getContext('2d');
+        
+        // Ajuste la taille du canvas
+        resizeCanvas();
+        
+        // Initialise l'UI selon la plateforme
+        if (PLATFORM.isMobile || PLATFORM.isTouch) {
+            initMobileUI();
+        } else {
+            initDesktopUI();
+        }
+        
+        // Initialise les écouteurs d'événements
+        initEventListeners();
+        
+        // Cache l'écran de chargement
+        setTimeout(() => {
+            UI.loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                UI.loadingScreen.style.display = 'none';
+            }, 1000);
+        }, 1500);
+    }
+    
+    /* Initialise l'UI mobile (Quantum Ghost) */
+    function initMobileUI() {
+        console.log("Initialisation UI Mobile: Quantum Ghost");
+        
+        // Montre les ghost UI
+        UI.ghostResources.style.display = 'block';
+        UI.ghostProgress.style.display = 'block';
+        UI.ghostStats.style.display = 'block';
+        UI.ghostActions.style.display = 'block';
+        
+        // Cache les orbites PC
+        document.querySelectorAll('.orbit-layer').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Initialise les actions des boutons
+        document.querySelectorAll('.icon-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.getAttribute('data-action');
+                handleMobileAction(action);
+            });
+        });
+        
+        // Tutorial mobile
+        showMessage("Swipe pour révéler les informations", "info", 3000);
+        setTimeout(() => {
+            showMessage("Tap sur une machine pour plus d'infos", "info", 3000);
+        }, 4000);
+    }
+    
+    /* Initialise l'UI desktop (Nebula Command) */
+    function initDesktopUI() {
+        console.log("Initialisation UI Desktop: Nebula Command");
+        
+        // Montre les orbites
+        document.querySelectorAll('.orbit-layer').forEach(el => {
+            el.style.display = 'block';
+        });
+        
+        // Initialise le menu radial
+        initRadialMenu();
+        
+        // Remplit les orbites avec du contenu
+        updateOrbitStats();
+        updateOrbitMachines();
+        updateOrbitResearch();
+        updateOrbitEconomy();
+        updateOrbitAI();
+        updateOrbitAlerts();
+        
+        // Tutorial desktop
+        showMessage("Clic droit pour le menu contextuel", "info", 3000);
+        setTimeout(() => {
+            showMessage("Utilise la molette pour zoomer", "info", 3000);
+        }, 4000);
+    }
+    
+    /* Initialise le menu radial (clic droit) */
+    function initRadialMenu() {
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Affiche le menu à la position de la souris
+            UI.radialMenu.style.left = `${x - 80}px`;
+            UI.radialMenu.style.top = `${y - 80}px`;
+            UI.radialMenu.style.display = 'flex';
+            
+            // Stocke la cellule sélectionnée
+            const cellPos = screenToGrid(x, y);
+            GameState.grid.selectedCell = cellPos;
+        });
+        
+        // Ferme le menu en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (UI.radialMenu.style.display === 'flex' && 
+                !UI.radialMenu.contains(e.target)) {
+                UI.radialMenu.style.display = 'none';
+            }
+        });
+        
+        // Gère les actions du menu radial
+        UI.radialMenu.querySelectorAll('.radial-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const action = this.getAttribute('data-action');
+                handleRadialAction(action);
+                UI.radialMenu.style.display = 'none';
+            });
+        });
+    }
+    
+    /* Gère les actions du menu radial */
+    function handleRadialAction(action) {
+        if (!GameState.grid.selectedCell) return;
+        
+        const { x, y } = GameState.grid.selectedCell;
+        
+        switch(action) {
+            case 'info':
+                showMachineInfo(x, y);
+                break;
+            case 'rotate':
+                rotateMachine(x, y);
+                break;
+            case 'upgrade':
+                upgradeMachine(x, y);
+                break;
+            case 'sell':
+                if (confirm("Vendre cette machine? (Rembourse 50%)")) {
+                    sellMachine(x, y);
+                }
+                break;
+            case 'connect':
+                showMessage("Connexion - À implémenter");
+                break;
+            case 'stats':
+                showMachineStats(x, y);
+                break;
+        }
+    }
+    
+    /* Gère les actions mobiles */
+    function handleMobileAction(action) {
+        switch(action) {
+            case 'menu':
+                showMobileMenu();
+                break;
+            case 'market':
+                showMarket();
+                break;
+            case 'research':
+                showResearch();
+                break;
+        }
+    }
+    
+    /* Affiche le menu mobile */
+    function showMobileMenu() {
+        const menuHtml = `
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; padding: 20px;">
+                <div style="text-align: center; margin-top: 50px;">
+                    <h2 style="color: #00ffff;">Menu Quantique</h2>
+                    <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px;">
+                        <button class="menu-btn">💾 Sauvegarder</button>
+                        <button class="menu-btn">📤 Exporter</button>
+                        <button class="menu-btn">⚙️ Paramètres</button>
+                        <button class="menu-btn">❓ Aide</button>
+                        <button class="menu-btn" onclick="closeMobileMenu()">✕ Fermer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const menu = document.createElement('div');
+        menu.id = 'mobileMenu';
+        menu.innerHTML = menuHtml;
+        document.body.appendChild(menu);
+        
+        // Ajoute les événements
+        menu.querySelectorAll('.menu-btn').forEach((btn, idx) => {
+            btn.addEventListener('click', function() {
+                const actions = [
+                    () => { saveGame(); showMessage("Jeu sauvegardé!"); },
+                    () => { exportGame(); showMessage("Exporté!"); },
+                    () => { showSettings(); },
+                    () => { showHelp(); }
+                ];
+                if (idx < 4) actions[idx]();
+            });
+        });
+    }
+    
+    /* Ferme le menu mobile */
+    function closeMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) menu.remove();
+    }
+    
+    /* Affiche le marché */
+    function showMarket() {
+        showMessage("Marché - À implémenter");
+    }
+    
+    /* Affiche la recherche */
+    function showResearch() {
+        showMessage("Recherche - À implémenter");
+    }
+    
+    /* Affiche les infos d'une machine */
+    function showMachineInfo(x, y) {
+        const cellIndex = y * GameState.grid.width + x;
+        const machine = GameState.grid.cells[cellIndex];
+        
+        if (!machine) {
+            showMessage("Pas de machine ici");
+            return;
+        }
+        
+        const machineDef = MACHINES.find(m => m.id === machine.id);
+        if (!machineDef) return;
+        
+        const info = `
+            <strong>${machineDef.name}</strong><br>
+            Niveau: ${machine.level}<br>
+            Efficacité: ${Math.round(machine.efficiency * 100)}%<br>
+            Production: ${JSON.stringify(machineDef.production || {})}<br>
+            Consommation: ${JSON.stringify(machineDef.consumption || {})}
+        `;
+        
+        showMessage(info, "info", 3000);
+    }
+    
+    /* Affiche les stats d'une machine */
+    function showMachineStats(x, y) {
+        const cellIndex = y * GameState.grid.width + x;
+        const machine = GameState.grid.cells[cellIndex];
+        
+        if (!machine) return;
+        
+        const stats = machine.stats;
+        const info = `
+            <strong>Statistiques</strong><br>
+            Production totale: ${Math.round(stats.totalProduced)}<br>
+            Consommation totale: ${Math.round(stats.totalConsumed)}<br>
+            Uptime: ${Math.round(stats.uptime)}s
+        `;
+        
+        showMessage(info, "info", 3000);
+    }
+    
+    /* Affiche un message à l'écran */
+    function showMessage(text, type = "info", duration = 2000) {
+        // Crée un élément de message
+        const message = document.createElement('div');
+        message.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            border: 2px solid ${type === "warning" ? "#ff0000" : "#00ffff"};
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            z-index: 10000;
+            text-align: center;
+            max-width: 80%;
+            backdrop-filter: blur(10px);
+        `;
+        message.innerHTML = text;
+        
+        document.body.appendChild(message);
+        
+        // Supprime après la durée
+        setTimeout(() => {
+            message.style.opacity = '0';
+            message.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                if (message.parentNode) {
+                    message.parentNode.removeChild(message);
+                }
+            }, 500);
+        }, duration);
+    }
+    
+    /* Met à jour l'affichage des ressources */
+    function updateResourceDisplay() {
+        // Mobile
+        if (UI.ghostResources) {
+            document.getElementById('matterDisplay').textContent = 
+                formatNumber(GameState.resources.matter.total);
+            document.getElementById('energyDisplay').textContent = 
+                formatNumber(GameState.resources.energy.total);
+            document.getElementById('moneyDisplay').textContent = 
+                formatNumber(GameState.resources.money.total);
+        }
+        
+        if (UI.ghostProgress) {
+            document.getElementById('levelDisplay').textContent = GameState.player.level;
+            // Calcule les objectifs complétés
+            const completed = GameState.achievements.filter(a => a.completed).length;
+            const total = GameState.achievements.length;
+            document.getElementById('goalsDisplay').textContent = `${completed}/${total}`;
+        }
+        
+        if (UI.ghostStats) {
+            // Format le temps de jeu
+            const minutes = Math.floor(GameState.player.totalPlayTime / 60);
+            const seconds = Math.floor(GameState.player.totalPlayTime % 60);
+            document.getElementById('timeDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Pollution
+            document.getElementById('pollutionDisplay').textContent = 
+                GameState.resources.trash.total.toFixed(1);
+        }
+        
+        // Desktop - Met à jour l'orbit stats
+        updateOrbitStats();
+    }
+    
+    /* Met à jour l'orbit stats (PC) */
+    function updateOrbitStats() {
+        if (!UI.orbitStats) return;
+        
+        const statsHtml = `
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
+                <div title="Énergie">⚡${formatNumber(GameState.resources.energy.total)}</div>
+                <div title="Matière">🧱${formatNumber(GameState.resources.matter.total)}</div>
+                <div title="Argent">💰${formatNumber(GameState.resources.money.total)}</div>
+                <div title="Pollution">⚠️${GameState.resources.trash.total.toFixed(1)}</div>
+                <div title="Recherche">🔬${GameState.resources.research.total.toFixed(0)}</div>
+                <div title="Niveau">📈N${GameState.player.level}</div>
+                <div title="Entropie">🌪️${GameState.resources.entropy.value.toFixed(1)}%</div>
+                <div title="Paradoxes">👁️${GameState.resources.paradox.count}</div>
+            </div>
+            <canvas id="sparkline" width="300" height="20" style="margin-top: 5px; width: 100%;"></canvas>
+        `;
+        
+        UI.orbitStats.innerHTML = statsHtml;
+    }
+    
+    /* Met à jour la liste des machines (PC) */
+    function updateOrbitMachines() {
+        if (!UI.orbitMachines) return;
+        
+        const unlockedMachines = MACHINES.filter(m => m.unlockLevel <= GameState.player.level);
+        let machinesHtml = '';
+        
+        for (const machine of unlockedMachines.slice(0, 10)) { // Limite à 10 machines
+            machinesHtml += `
+                <div class="machine-card" draggable="true" data-id="${machine.id}">
+                    ${machine.emoji} ${machine.name}<br>
+                    <small>${Object.entries(machine.cost).map(([r, a]) => `${RESOURCES[r].emoji}${a}`).join(' ')}</small>
+                </div>
+            `;
+        }
+        
+        UI.orbitMachines.querySelector('#machineList').innerHTML = machinesHtml;
+        
+        // Ajoute les événements drag & drop
+        document.querySelectorAll('.machine-card[draggable="true"]').forEach(card => {
+            card.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('machineId', this.getAttribute('data-id'));
+                GameState.ui.placingMachine = this.getAttribute('data-id');
+            });
+        });
+    }
+    
+    /* Met à jour l'arbre de recherche */
+    function updateOrbitResearch() {
+        if (!UI.orbitResearch) return;
+        
+        let researchHtml = '';
+        for (const research of GameState.research) {
+            const progress = research.progress || 0;
+            const percent = Math.min(100, (progress / research.cost.research) * 100);
+            
+            researchHtml += `
+                <div style="margin-bottom: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                    <strong>${research.name}</strong><br>
+                    <small>${research.description}</small><br>
+                    <div style="background: #333; height: 4px; margin-top: 5px; border-radius: 2px;">
+                        <div style="background: #00ff00; height: 100%; width: ${percent}%; border-radius: 2px;"></div>
+                    </div>
+                    <small>${progress}/${research.cost.research} 🔬</small>
+                </div>
+            `;
+        }
+        
+        UI.orbitResearch.querySelector('#researchTree').innerHTML = researchHtml;
+    }
+    
+    /* Met à jour l'économie */
+    function updateOrbitEconomy() {
+        if (!UI.orbitEconomy) return;
+        
+        const marketHtml = `
+            <div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>🧱 Matière:</span>
+                    <span>$${(0.5 * GameState.player.level).toFixed(2)}/unité</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>⚡ Énergie:</span>
+                    <span>$${(0.2 * GameState.player.level).toFixed(2)}/unité</span>
+                </div>
+                <hr style="margin: 8px 0; opacity: 0.3;">
+                <div style="font-size: 10px; opacity: 0.7;">
+                    Prix évoluent avec le niveau
+                </div>
+            </div>
+        `;
+        
+        UI.orbitEconomy.querySelector('#marketPrices').innerHTML = marketHtml;
+    }
+    
+    /* Met à jour les suggestions IA */
+    function updateOrbitAI() {
+        if (!UI.orbitAI) return;
+        
+        const suggestions = [
+            "Place plus d'extracteurs",
+            "Construis un purificateur",
+            "Upgrade tes machines",
+            "Vends l'excès de matière"
+        ];
+        
+        const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+        
+        const aiHtml = `
+            <div style="padding: 8px; background: rgba(0,100,200,0.2); border-radius: 8px; border-left: 3px solid #00ffff;">
+                <strong>💡 Suggestion IA:</strong><br>
+                ${randomSuggestion}
+            </div>
+        `;
+        
+        UI.orbitAI.querySelector('#aiSuggestions').innerHTML = aiHtml;
+    }
+    
+    /* Met à jour les alertes */
+    function updateOrbitAlerts() {
+        if (!UI.orbitAlerts) return;
+        
+        let alerts = [];
+        
+        // Vérifie les ressources faibles
+        if (GameState.resources.energy.total < 50) {
+            alerts.push({ text: "⚠️ Énergie faible!", type: "warning" });
+        }
+        
+        if (GameState.resources.matter.total < 30) {
+            alerts.push({ text: "⚠️ Matière faible!", type: "warning" });
+        }
+        
+        if (GameState.resources.trash.total > 100) {
+            alerts.push({ text: "⚠️ Trop de déchets!", type: "warning" });
+        }
+        
+        if (GameState.resources.entropy.value > 70) {
+            alerts.push({ text: "🌪️ Entropie élevée!", type: "danger" });
+        }
+        
+        // Ajoute les paradoxes actifs
+        for (const paradox of GameState.activeParadoxes) {
+            const timeLeft = paradox.duration - (GameState.time.gameTime - paradox.startTime);
+            if (timeLeft > 0) {
+                alerts.push({ text: `👁️ ${paradox.name}: ${Math.ceil(timeLeft)}s`, type: "paradox" });
+            }
+        }
+        
+        // Limite à 5 alertes
+        alerts = alerts.slice(0, 5);
+        
+        let alertsHtml = '';
+        for (const alert of alerts) {
+            const color = alert.type === "warning" ? "#ffaa00" : 
+                         alert.type === "danger" ? "#ff0000" : 
+                         alert.type === "paradox" ? "#ff00ff" : "#ffffff";
+            
+            alertsHtml += `
+                <div style="margin-bottom: 5px; padding: 5px; border-left: 3px solid ${color}; background: rgba(0,0,0,0.3);">
+                    ${alert.text}
+                </div>
+            `;
+        }
+        
+        if (alerts.length === 0) {
+            alertsHtml = '<div style="opacity: 0.7; text-align: center;">Aucune alerte</div>';
+        }
+        
+        UI.orbitAlerts.querySelector('#alertList').innerHTML = alertsHtml;
+    }
+    
+    /* Formate un nombre pour l'affichage (K, M, B) */
+    function formatNumber(num) {
+        if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return Math.floor(num).toString();
+    }
+    
+    // === SECTION 5: GAME LOOPS (Boucles de jeu) ===
+    // Boucle principale, simulation, rendu
+    
+    /* Initialise la boucle de jeu */
+    function initGameLoop() {
+        console.log("Initialisation boucle de jeu");
+        
+        // Initialise l'état du jeu
+        initGrid();
+        initUI();
+        
+        // Démarre la boucle de jeu
+        GameState.time.lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+        
+        // Démarre l'auto-save
+        setInterval(saveGame, CONFIG.PERFORMANCE.AUTO_SAVE_INTERVAL);
+        
+        // Démarre les mises à jour périodiques
+        setInterval(updatePeriodic, 1000); // Mise à jour chaque seconde
+        
+        console.log("Jeu initialisé avec succès!");
+    }
+    
+    /* Boucle principale du jeu */
+    function gameLoop(currentTime) {
+        // Calcule le deltaTime (temps écoulé depuis la dernière frame)
+        GameState.time.deltaTime = (currentTime - GameState.time.lastTime) / 1000; // en secondes
+        GameState.time.lastTime = currentTime;
+        
+        // Met à jour le temps de jeu (si pas en pause)
+        if (!GameState.time.paused) {
+            GameState.time.gameTime += GameState.time.deltaTime * GameState.time.timeScale;
+            GameState.player.totalPlayTime += GameState.time.deltaTime;
+        }
+        
+        // Met à jour les FPS
+        updateFPS(currentTime);
+        
+        // Mise à jour de la simulation
+        updateSimulation(GameState.time.deltaTime * GameState.time.timeScale);
+        
+        // Rendu
+        render();
+        
+        // Continue la boucle
+        requestAnimationFrame(gameLoop);
+    }
+    
+    /* Met à jour les FPS */
+    function updateFPS(currentTime) {
+        GameState.performance.frameCount++;
+        
+        if (currentTime - GameState.performance.lastFpsUpdate >= 1000) {
+            GameState.performance.fps = Math.round(
+                (GameState.performance.frameCount * 1000) / (currentTime - GameState.performance.lastFpsUpdate)
+            );
+            GameState.performance.frameCount = 0;
+            GameState.performance.lastFpsUpdate = currentTime;
+            
+            if (CONFIG.DEBUG) {
+                console.log(`FPS: ${GameState.performance.fps}`);
+            }
+        }
+    }
+    
+    /* Met à jour la simulation */
+    function updateSimulation(deltaTime) {
+        // Calcule la production
+        calculateProduction();
+        
+        // Met à jour les ressources
+        updateResources(deltaTime);
+        
+        // Met à jour les paradoxes actifs
+        updateParadoxes(deltaTime);
+        
+        // Met à jour l'XP et les niveaux
+        updateLevel();
+        
+        // Met à jour les achievements
+        updateAchievements();
+        
+        // Met à jour les particules
+        Particles.update(deltaTime);
+        
+        // Met à jour l'UI
+        updateUI();
+    }
+    
+    /* Met à jour les ressources */
+    function updateResources(deltaTime) {
+        // Pour chaque ressource avec un taux
+        for (const [key, resource] of Object.entries(GameState.resources)) {
+            if (resource.rate !== undefined) {
+                // Applique le taux de production/consommation
+                const change = resource.rate * deltaTime;
+                resource.total += change;
+                
+                // Limite aux valeurs max/min
+                if (resource.max !== undefined) {
+                    resource.total = Math.min(resource.total, resource.max);
+                }
+                resource.total = Math.max(resource.total, 0);
+                
+                // Met à jour le total d'argent
+                if (key === 'money') {
+                    GameState.player.totalMoney = Math.max(GameState.player.totalMoney, resource.total);
+                }
+            }
+        }
+    }
+    
+    /* Met à jour les paradoxes actifs */
+    function updateParadoxes(deltaTime) {
+        for (let i = GameState.activeParadoxes.length - 1; i >= 0; i--) {
+            const paradox = GameState.activeParadoxes[i];
+            const elapsed = GameState.time.gameTime - paradox.startTime;
+            
+            // Supprime si expiré
+            if (paradox.duration > 0 && elapsed >= paradox.duration) {
+                GameState.activeParadoxes.splice(i, 1);
+                showMessage(`Fin: ${paradox.name}`);
+            }
+        }
+    }
+    
+    /* Met à jour le niveau du joueur */
+    function updateLevel() {
+        // Gain d'XP automatique (basé sur la production)
+        const xpGain = (GameState.resources.matter.rate + GameState.resources.money.rate * 2) * 0.01;
+        GameState.player.xp += xpGain;
+        
+        // Vérifie le level up
+        while (GameState.player.xp >= GameState.player.xpToNext) {
+            GameState.player.xp -= GameState.player.xpToNext;
+            GameState.player.level++;
+            
+            // Calcule le prochain XP requis
+            GameState.player.xpToNext = Math.floor(
+                CONFIG.GAMEPLAY.XP_BASE * Math.pow(CONFIG.GAMEPLAY.XP_MULTIPLIER, GameState.player.level - 1)
+            );
+            
+            // Agrandit la grille tous les 5 niveaux
+            if (GameState.player.level % 5 === 0 && GameState.grid.width < CONFIG.GRID.MAX_SIZE) {
+                GameState.grid.width += 2;
+                GameState.grid.height += 2;
+                resizeGrid();
+                showMessage(`Nouvelle taille de grille: ${GameState.grid.width}x${GameState.grid.height}!`);
+            }
+            
+            // Achievement niveau 5
+            if (GameState.player.level === 5) {
+                completeAchievement("level_5");
+            }
+            
+            showMessage(`Level UP! Niveau ${GameState.player.level}`, "info");
+            playSound("levelup");
+        }
+    }
+    
+    /* Met à jour les achievements */
+    function updateAchievements() {
+        // Vérifie l'achievement "première vente"
+        if (GameState.stats.resourcesSold > 0 && 
+            !GameState.achievements.find(a => a.id === "first_sale").completed) {
+            completeAchievement("first_sale");
+        }
+        
+        // Vérifie l'achievement "première recherche"
+        if (GameState.research.some(r => r.completed) && 
+            !GameState.achievements.find(a => a.id === "research_first").completed) {
+            completeAchievement("research_first");
+        }
+        
+        // Vérifie l'achievement "contrôle de pollution"
+        // (À implémenter: suivi du temps avec pollution basse)
+    }
+    
+    /* Complète un achievement */
+    function completeAchievement(achievementId) {
+        const achievement = GameState.achievements.find(a => a.id === achievementId);
+        if (achievement && !achievement.completed) {
+            achievement.completed = true;
+            
+            // Applique la récompense
+            if (achievement.reward) {
+                for (const [resource, amount] of Object.entries(achievement.reward)) {
+                    if (GameState.resources[resource]) {
+                        GameState.resources[resource].total += amount;
+                    }
+                }
+            }
+            
+            showMessage(`Achievement: ${achievement.name}!`, "info");
+            playSound("achievement");
+        }
+    }
+    
+    /* Mises à jour périodiques (chaque seconde) */
+    function updatePeriodic() {
+        // Met à jour l'UI
+        updateResourceDisplay();
+        updateOrbitAlerts();
+        updateOrbitAI();
+        
+        // Sauvegarde auto (déjà gérée par setInterval)
+    }
+    
+    /* Met à jour l'UI */
+    function updateUI() {
+        // Met à jour la bulle contextuelle si une machine est survolée
+        if (GameState.grid.hoveredCell && UI.contextBubble) {
+            const { x, y } = GameState.grid.hoveredCell;
+            const cellIndex = y * GameState.grid.width + x;
+            const machine = GameState.grid.cells[cellIndex];
+            
+            if (machine) {
+                const machineDef = MACHINES.find(m => m.id === machine.id);
+                if (machineDef) {
+                    // Positionne la bulle au-dessus de la machine
+                    const screenPos = gridToScreen(x, y);
+                    UI.contextBubble.style.left = `${screenPos.x}px`;
+                    UI.contextBubble.style.top = `${screenPos.y - 40}px`;
+                    UI.contextBubble.innerHTML = `
+                        <strong>${machineDef.name}</strong><br>
+                        Niv. ${machine.level}<br>
+                        ${machineDef.emoji}
+                    `;
+                    UI.contextBubble.classList.add('show');
+                    return;
+                }
+            }
+        }
+        
+        // Cache la bulle si aucune machine survolée
+        if (UI.contextBubble) {
+            UI.contextBubble.classList.remove('show');
+        }
+    }
+    
+    // === SECTION 6: RENDER LOOP (Boucle de rendu) ===
+    // Rendu de la grille, machines, particules
+    
+    /* Rendu principal */
+    function render() {
+        // Efface le canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Applique la transformation de la grille (zoom + décalage)
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(GameState.grid.zoom, GameState.grid.zoom);
+        ctx.translate(GameState.grid.offset.x, GameState.grid.offset.y);
+        
+        // Rendu de la grille
+        renderGrid();
+        
+        // Rendu des machines
+        renderMachines();
+        
+        // Rendu des connexions
+        if (GameState.ui.showConnections) {
+            renderConnections();
+        }
+        
+        // Rendu des particules
+        Particles.render(ctx);
+        
+        // Rendu de la heatmap (si activée)
+        if (GameState.ui.showHeatmap) {
+            renderHeatmap();
+        }
+        
+        ctx.restore();
+        
+        // Rendu de l'overlay (sélection, etc.)
+        renderOverlay();
+        
+        // Rendu des FPS (debug)
+        if (CONFIG.DEBUG) {
+            renderDebugInfo();
+        }
+    }
+    
+    /* Rendu de la grille */
+    function renderGrid() {
+        const cellSize = CONFIG.GRID.CELL_SIZE;
+        const width = GameState.grid.width;
+        const height = GameState.grid.height;
+        
+        // Couleur de la grille (dépend de l'entropie)
+        const entropy = GameState.resources.entropy.value / 100;
+        const gridColor = `rgba(100, 200, 255, ${0.1 * (1 - entropy)})`;
+        const gridColor2 = `rgba(255, 100, 255, ${0.1 * entropy})`;
+        
+        // Lignes verticales
+        for (let x = 0; x <= width; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * cellSize, 0);
+            ctx.lineTo(x * cellSize, height * cellSize);
+            ctx.strokeStyle = (x % 5 === 0) ? gridColor2 : gridColor;
+            ctx.lineWidth = (x % 5 === 0) ? 2 : 1;
+            ctx.stroke();
+        }
+        
+        // Lignes horizontales
+        for (let y = 0; y <= height; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * cellSize);
+            ctx.lineTo(width * cellSize, y * cellSize);
+            ctx.strokeStyle = (y % 5 === 0) ? gridColor2 : gridColor;
+            ctx.lineWidth = (y % 5 === 0) ? 2 : 1;
+            ctx.stroke();
+        }
+        
+        // Centre de la grille (point de repère)
+        ctx.fillStyle = "#00ffff";
+        ctx.beginPath();
+        ctx.arc(width * cellSize / 2, height * cellSize / 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    /* Rendu des machines */
+    function renderMachines() {
+        const cellSize = CONFIG.GRID.CELL_SIZE;
+        
+        for (const machine of GameState.placedMachines) {
+            const machineDef = MACHINES.find(m => m.id === machine.id);
+            if (!machineDef) continue;
+            
+            const x = machine.x * cellSize;
+            const y = machine.y * cellSize;
+            
+            // Effet de sélection
+            if (GameState.grid.selectedCell && 
+                GameState.grid.selectedCell.x === machine.x && 
+                GameState.grid.selectedCell.y === machine.y) {
+                ctx.save();
+                ctx.shadowColor = "#00ffff";
+                ctx.shadowBlur = 20;
+            }
+            
+            // Couleur de base + effet d'efficacité
+            const efficiency = machine.efficiency;
+            const color = machineDef.color || "#888888";
+            const brightness = 0.5 + (efficiency * 0.5);
+            
+            // Corps de la machine
+            ctx.fillStyle = adjustColor(color, brightness);
+            ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+            
+            // Bordure
+            ctx.strokeStyle = efficiency > 1.0 ? "#00ff00" : "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+            
+            // Emoji/icône
+            ctx.font = `${cellSize * 0.6}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(machineDef.emoji, x + cellSize / 2, y + cellSize / 2);
+            
+            // Niveau (petit chiffre en bas à droite)
+            if (machine.level > 1) {
+                ctx.font = `${cellSize * 0.3}px Arial`;
+                ctx.fillStyle = "#ffd700";
+                ctx.fillText(machine.level.toString(), x + cellSize - 6, y + cellSize - 6);
+            }
+            
+            // Ports (points de connexion)
+            const ports = machineDef.ports || [];
+            const rotation = machine.rotation;
+            
+            ctx.fillStyle = "#00ffff";
+            for (const port of ports) {
+                let portX, portY;
+                
+                // Applique la rotation
+                let dir = port;
+                for (let i = 0; i < rotation; i++) {
+                    dir = rotateDirection(dir);
+                }
+                
+                switch(dir) {
+                    case "N": portX = x + cellSize / 2; portY = y + 4; break;
+                    case "S": portX = x + cellSize / 2; portY = y + cellSize - 4; break;
+                    case "E": portX = x + cellSize - 4; portY = y + cellSize / 2; break;
+                    case "W": portX = x + 4; portY = y + cellSize / 2; break;
+                }
+                
+                ctx.beginPath();
+                ctx.arc(portX, portY, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            if (GameState.grid.selectedCell && 
+                GameState.grid.selectedCell.x === machine.x && 
+                GameState.grid.selectedCell.y === machine.y) {
+                ctx.restore();
+            }
+        }
+    }
+    
+    /* Rendu des connexions entre machines */
+    function renderConnections() {
+        // À implémenter: lignes laser entre machines connectées
+        // Pour V1: connexions automatiques basées sur la proximité
+    }
+    
+    /* Rendu de la heatmap */
+    function renderHeatmap() {
+        // À implémenter: overlay de chaleur montrant le flux de ressources
+    }
+    
+    /* Rendu de l'overlay (sélection, placement) */
+    function renderOverlay() {
+        // Si on est en train de placer une machine
+        if (GameState.ui.placingMachine) {
+            const machineDef = MACHINES.find(m => m.id === GameState.ui.placingMachine);
+            if (machineDef) {
+                const mousePos = GameState.input.mouse;
+                const gridPos = screenToGrid(mousePos.x, mousePos.y);
+                
+                if (gridPos) {
+                    const screenPos = gridToScreen(gridPos.x, gridPos.y);
+                    const cellSize = CONFIG.GRID.CELL_SIZE * GameState.grid.zoom;
+                    
+                    // Rectangle semi-transparent pour la prévisualisation
+                    ctx.save();
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = "#00ff00";
+                    ctx.fillRect(
+                        screenPos.x - cellSize / 2,
+                        screenPos.y - cellSize / 2,
+                        cellSize,
+                        cellSize
+                    );
+                    
+                    // Emoji de la machine
+                    ctx.globalAlpha = 1;
+                    ctx.font = `${cellSize * 0.6}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(machineDef.emoji, screenPos.x, screenPos.y);
+                    ctx.restore();
+                }
+            }
+        }
+    }
+    
+    /* Rendu des infos debug */
+    function renderDebugInfo() {
+        ctx.save();
+        ctx.resetTransform(); // Retour aux coordonnées écran
+        
+        // FPS
+        ctx.fillStyle = GameState.performance.fps < 30 ? "#ff0000" : "#00ff00";
+        ctx.font = "12px monospace";
+        ctx.fillText(`FPS: ${GameState.performance.fps}`, 10, 20);
+        
+        // Ressources
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(`🧱: ${GameState.resources.matter.total.toFixed(0)} (${GameState.resources.matter.rate.toFixed(1)}/s)`, 10, 40);
+        ctx.fillText(`⚡: ${GameState.resources.energy.total.toFixed(0)} (${GameState.resources.energy.rate.toFixed(1)}/s)`, 10, 55);
+        ctx.fillText(`💰: ${GameState.resources.money.total.toFixed(0)} (${GameState.resources.money.rate.toFixed(1)}/s)`, 10, 70);
+        ctx.fillText(`🌪️: ${GameState.resources.entropy.value.toFixed(1)}%`, 10, 85);
+        
+        // Machines
+        ctx.fillText(`Machines: ${GameState.placedMachines.length}`, 10, 100);
+        
+        ctx.restore();
+    }
+    
+    /* Ajuste la luminosité d'une couleur */
+    function adjustColor(color, factor) {
+        // Conversion hex -> RGB simple
+        const r = parseInt(color.substr(1, 2), 16);
+        const g = parseInt(color.substr(3, 2), 16);
+        const b = parseInt(color.substr(5, 2), 16);
+        
+        const newR = Math.min(255, Math.floor(r * factor));
+        const newG = Math.min(255, Math.floor(g * factor));
+        const newB = Math.min(255, Math.floor(b * factor));
+        
+        return `rgb(${newR}, ${newG}, ${newB})`;
+    }
+    
+    /* Tourne une direction (N, S, E, W) */
+    function rotateDirection(dir) {
+        const directions = ["N", "E", "S", "W"];
+        const idx = directions.indexOf(dir);
+        return directions[(idx + 1) % 4];
+    }
+    
+    // === SECTION 7: INPUT HANDLING (Gestion des entrées) ===
+    // Souris, clavier, touch, gestures
+    
+    /* Initialise les écouteurs d'événements */
+    function initEventListeners() {
+        console.log("Initialisation des écouteurs d'événements");
+        
+        // === SOURIS (Desktop) ===
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        canvas.addEventListener('wheel', handleMouseWheel);
+        
+        // Clic droit (menu contextuel)
+        canvas.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            // Géré dans initRadialMenu()
+        });
+        
+        // === TOUCH (Mobile) ===
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd);
+        
+        // === CLAVIER ===
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        
+        // === FENÊTRE ===
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('beforeunload', function(e) {
+            saveGame();
+        });
+        
+        // === DRAG & DROP (PC) ===
+        canvas.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+        
+        canvas.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const machineId = e.dataTransfer.getData('machineId');
+            if (machineId) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const gridPos = screenToGrid(x, y);
+                
+                if (gridPos) {
+                    placeMachine(machineId, gridPos.x, gridPos.y, GameState.ui.rotation);
+                }
+            }
+        });
+    }
+    
+    /* Gestion souris: bouton enfoncé */
+    function handleMouseDown(e) {
+        GameState.input.mouse.down = true;
+        GameState.input.mouse.x = e.clientX;
+        GameState.input.mouse.y = e.clientY;
+        
+        // Clic droit
+        if (e.button === 2) {
+            GameState.input.mouse.rightDown = true;
+            return;
+        }
+        
+        // Clic gauche
+        const gridPos = screenToGrid(e.clientX, e.clientY);
+        if (gridPos) {
+            // Si on est en mode placement
+            if (GameState.ui.placingMachine) {
+                placeMachine(GameState.ui.placingMachine, gridPos.x, gridPos.y, GameState.ui.rotation);
+                GameState.ui.placingMachine = null;
+            } else {
+                // Sélectionne la machine
+                GameState.grid.selectedCell = gridPos;
+                
+                // Clic rapide: affiche les infos
+                const cellIndex = gridPos.y * GameState.grid.width + gridPos.x;
+                const machine = GameState.grid.cells[cellIndex];
+                if (machine) {
+                    showMachineInfo(gridPos.x, gridPos.y);
+                }
+            }
+        }
+    }
+    
+    /* Gestion souris: déplacement */
+    function handleMouseMove(e) {
+        GameState.input.mouse.x = e.clientX;
+        GameState.input.mouse.y = e.clientY;
+        
+        // Met à jour la cellule survolée
+        const gridPos = screenToGrid(e.clientX, e.clientY);
+        GameState.grid.hoveredCell = gridPos;
+        
+        // Drag de la grille (bouton du milieu ou clic droit)
+        if (GameState.input.mouse.down) {
+            if (e.buttons === 4 || GameState.input.mouse.rightDown) { // Bouton du milieu ou clic droit
+                const dx = e.movementX / GameState.grid.zoom;
+                const dy = e.movementY / GameState.grid.zoom;
+                GameState.grid.offset.x += dx;
+                GameState.grid.offset.y += dy;
+            }
+        }
+    }
+    
+    /* Gestion souris: bouton relâché */
+    function handleMouseUp(e) {
+        GameState.input.mouse.down = false;
+        GameState.input.mouse.rightDown = false;
+    }
+    
+    /* Gestion souris: molette (zoom) */
+    function handleMouseWheel(e) {
+        e.preventDefault();
+        
+        const zoomFactor = e.deltaY > 0 ? 1 - CONFIG.GRID.ZOOM_SPEED : 1 + CONFIG.GRID.ZOOM_SPEED;
+        const newZoom = GameState.grid.zoom * zoomFactor;
+        GameState.grid.zoom = Math.max(CONFIG.GRID.ZOOM_MIN, Math.min(CONFIG.GRID.ZOOM_MAX, newZoom));
+    }
+    
+    /* Gestion touch: début */
+    function handleTouchStart(e) {
+        e.preventDefault();
+        
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            GameState.input.touch = {
+                active: true,
+                startX: touch.clientX,
+                startY: touch.clientY,
+                lastX: touch.clientX,
+                lastY: touch.clientY
+            };
+            
+            // Tap simple: sélectionne la machine
+            const gridPos = screenToGrid(touch.clientX, touch.clientY);
+            if (gridPos) {
+                GameState.grid.selectedCell = gridPos;
+                
+                const cellIndex = gridPos.y * GameState.grid.width + gridPos.x;
+                const machine = GameState.grid.cells[cellIndex];
+                if (machine) {
+                    showMachineInfo(gridPos.x, gridPos.y);
+                }
+            }
+        } else if (e.touches.length === 2) {
+            // Pinch zoom (à implémenter)
+        }
+    }
+    
+    /* Gestion touch: déplacement */
+    function handleTouchMove(e) {
+        e.preventDefault();
+        
+        if (e.touches.length === 1 && GameState.input.touch.active) {
+            const touch = e.touches[0];
+            const dx = (touch.clientX - GameState.input.touch.lastX) / GameState.grid.zoom;
+            const dy = (touch.clientY - GameState.input.touch.lastY) / GameState.grid.zoom;
+            
+            // Drag de la grille
+            GameState.grid.offset.x += dx;
+            GameState.grid.offset.y += dy;
+            
+            GameState.input.touch.lastX = touch.clientX;
+            GameState.input.touch.lastY = touch.clientY;
+        }
+    }
+    
+    /* Gestion touch: fin */
+    function handleTouchEnd(e) {
+        GameState.input.touch.active = false;
+        
+        // Swipe detection pour révéler les ghost UI
+        if (GameState.input.touch.startX && GameState.input.touch.lastX) {
+            const dx = GameState.input.touch.lastX - GameState.input.touch.startX;
+            const dy = GameState.input.touch.lastY - GameState.input.touch.startY;
+            
+            // Swipe significatif (> 50px)
+            if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+                // Révèle temporairement les ghost UI
+                document.querySelectorAll('.ghost-ui').forEach(el => {
+                    el.style.opacity = '1';
+                    setTimeout(() => {
+                        el.style.opacity = '0.7';
+                    }, 2000);
+                });
+            }
+        }
+    }
+    
+    /* Gestion clavier: touche enfoncée */
+    function handleKeyDown(e) {
+        GameState.input.keys[e.key] = true;
+        
+        switch(e.key) {
+            case ' ': // Espace: pause
+                GameState.time.paused = !GameState.time.paused;
+                showMessage(GameState.time.paused ? "Jeu en pause" : "Jeu repris");
+                break;
+                
+            case 'r': // R: rotation
+                GameState.ui.rotation = (GameState.ui.rotation + 1) % 4;
+                showMessage(`Rotation: ${GameState.ui.rotation * 90}°`);
+                break;
+                
+            case 'g': // G: toggle grille
+                GameState.ui.showGrid = !GameState.ui.showGrid;
+                break;
+                
+            case 'c': // C: toggle connexions
+                GameState.ui.showConnections = !GameState.ui.showConnections;
+                break;
+                
+            case 'h': // H: toggle heatmap
+                GameState.ui.showHeatmap = !GameState.ui.showHeatmap;
+                break;
+                
+            case '+': // +: zoom in
+            case '=':
+                GameState.grid.zoom = Math.min(CONFIG.GRID.ZOOM_MAX, GameState.grid.zoom + 0.1);
+                break;
+                
+            case '-': // -: zoom out
+                GameState.grid.zoom = Math.max(CONFIG.GRID.ZOOM_MIN, GameState.grid.zoom - 0.1);
+                break;
+                
+            case 's': // S: sauvegarde
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    saveGame();
+                    showMessage("Jeu sauvegardé!");
+                }
+                break;
+                
+            case 'l': // L: chargement
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    loadGame();
+                }
+                break;
+        }
+    }
+    
+    /* Gestion clavier: touche relâchée */
+    function handleKeyUp(e) {
+        GameState.input.keys[e.key] = false;
+    }
+    
+    /* Convertit les coordonnées écran en coordonnées grille */
+    function screenToGrid(screenX, screenY) {
+        const rect = canvas.getBoundingClientRect();
+        const x = screenX - rect.left;
+        const y = screenY - rect.top;
+        
+        // Applique la transformation inverse
+        const transform = ctx.getTransform();
+        const inverted = transform.invertSelf();
+        
+        const gridX = (x * inverted.a + y * inverted.c + inverted.e) - GameState.grid.offset.x;
+        const gridY = (x * inverted.b + y * inverted.d + inverted.f) - GameState.grid.offset.y;
+        
+        // Convertit en coordonnées cellule
+        const cellX = Math.floor(gridX / CONFIG.GRID.CELL_SIZE);
+        const cellY = Math.floor(gridY / CONFIG.GRID.CELL_SIZE);
+        
+        // Vérifie les limites
+        if (cellX < 0 || cellX >= GameState.grid.width || 
+            cellY < 0 || cellY >= GameState.grid.height) {
+            return null;
+        }
+        
+        return { x: cellX, y: cellY };
+    }
+    
+    /* Convertit les coordonnées grille en coordonnées écran */
+    function gridToScreen(gridX, gridY) {
+        const cellSize = CONFIG.GRID.CELL_SIZE;
+        const x = (gridX + 0.5) * cellSize + GameState.grid.offset.x;
+        const y = (gridY + 0.5) * cellSize + GameState.grid.offset.y;
+        
+        const transform = ctx.getTransform();
+        const screenX = x * transform.a + y * transform.c + transform.e;
+        const screenY = x * transform.b + y * transform.d + transform.f;
+        
+        return { x: screenX, y: screenY };
+    }
+    
+    /* Redimensionne le canvas */
+    function resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        
+        // Met à jour la détection de plateforme
+        PLATFORM.screenWidth = window.innerWidth;
+        PLATFORM.screenHeight = window.innerHeight;
+    }
+    
+    /* Redimensionne la grille */
+    function resizeGrid() {
+        const oldWidth = GameState.grid.width - 2; // On a ajouté 2
+        const oldHeight = GameState.grid.height - 2;
+        const oldCells = GameState.grid.cells;
+        
+        // Crée une nouvelle grille
+        GameState.grid.cells = Array(GameState.grid.width * GameState.grid.height).fill(null);
+        
+        // Copie les anciennes cellules
+        for (let y = 0; y < oldHeight; y++) {
+            for (let x = 0; x < oldWidth; x++) {
+                const oldIndex = y * oldWidth + x;
+                const newIndex = (y + 1) * GameState.grid.width + (x + 1); // Centre les anciennes machines
+                GameState.grid.cells[newIndex] = oldCells[oldIndex];
+                
+                // Met à jour les coordonnées de la machine
+                if (oldCells[oldIndex]) {
+                    oldCells[oldIndex].x = x + 1;
+                    oldCells[oldIndex].y = y + 1;
+                }
+            }
+        }
+    }
+    
+    // === SECTION 8: SAVE/LOAD SYSTEM (Sauvegarde/Chargement) ===
+    // localStorage, export JSON, import
+    
+    /* Sauvegarde le jeu */
+    function saveGame() {
+        const saveData = {
+            version: CONFIG.VERSION,
+            player: GameState.player,
+            resources: GameState.resources,
+            grid: {
+                width: GameState.grid.width,
+                height: GameState.grid.height,
+                cells: GameState.grid.cells.map(cell => {
+                    if (!cell) return null;
+                    return {
+                        id: cell.id,
+                        x: cell.x,
+                        y: cell.y,
+                        rotation: cell.rotation,
+                        level: cell.level,
+                        efficiency: cell.efficiency
+                    };
+                })
+            },
+            placedMachines: GameState.placedMachines.map(machine => ({
+                id: machine.id,
+                x: machine.x,
+                y: machine.y,
+                rotation: machine.rotation,
+                level: machine.level,
+                efficiency: machine.efficiency
+            })),
+            research: GameState.research,
+            achievements: GameState.achievements,
+            stats: GameState.stats,
+            timestamp: Date.now()
+        };
+        
+        try {
+            localStorage.setItem('QuantumFactory_v7', JSON.stringify(saveData));
+            GameState.player.lastSaveTime = Date.now();
+            console.log("Jeu sauvegardé");
+            return true;
+        } catch (e) {
+            console.error("Erreur de sauvegarde:", e);
+            return false;
+        }
+    }
+    
+    /* Charge le jeu */
+    function loadGame() {
+        try {
+            const saveData = JSON.parse(localStorage.getItem('QuantumFactory_v7'));
+            
+            if (!saveData) {
+                console.log("Pas de sauvegarde trouvée");
+                return false;
+            }
+            
+            // Vérifie la version
+            if (saveData.version !== CONFIG.VERSION) {
+                console.warn(`Version différente: ${saveData.version} vs ${CONFIG.VERSION}`);
+                // Pourrait implémenter une migration ici
+            }
+            
+            // Charge les données
+            GameState.player = saveData.player;
+            GameState.resources = saveData.resources;
+            GameState.grid.width = saveData.grid.width;
+            GameState.grid.height = saveData.grid.height;
+            GameState.grid.cells = saveData.grid.cells;
+            GameState.placedMachines = saveData.placedMachines || [];
+            GameState.research = saveData.research || GameState.research;
+            GameState.achievements = saveData.achievements || GameState.achievements;
+            GameState.stats = saveData.stats || GameState.stats;
+            
+            // Réinitialise l'UI
+            updateResourceDisplay();
+            updateOrbitMachines();
+            updateOrbitResearch();
+            
+            console.log("Jeu chargé");
+            showMessage("Jeu chargé avec succès!");
+            return true;
+        } catch (e) {
+            console.error("Erreur de chargement:", e);
+            showMessage("Erreur de chargement de la sauvegarde", "warning");
+            return false;
+        }
+    }
+    
+    /* Exporte le jeu en JSON */
+    function exportGame() {
+        const saveData = {
+            version: CONFIG.VERSION,
+            player: GameState.player,
+            resources: GameState.resources,
+            grid: GameState.grid,
+            placedMachines: GameState.placedMachines,
+            research: GameState.research,
+            achievements: GameState.achievements,
+            stats: GameState.stats,
+            timestamp: Date.now()
+        };
+        
+        const dataStr = JSON.stringify(saveData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `QuantumFactory_Export_${Date.now()}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showMessage("Jeu exporté!");
+    }
+    
+    /* Importe le jeu depuis un fichier JSON */
+    function importGame() {
+        // Crée un input file
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    const saveData = JSON.parse(event.target.result);
+                    
+                    // Vérifie que c'est bien une sauvegarde Quantum Factory
+                    if (!saveData.version || !saveData.player) {
+                        throw new Error("Fichier invalide");
+                    }
+                    
+                    // Charge les données (même logique que loadGame)
+                    GameState.player = saveData.player;
+                    GameState.resources = saveData.resources;
+                    GameState.grid = saveData.grid;
+                    GameState.placedMachines = saveData.placedMachines;
+                    GameState.research = saveData.research;
+                    GameState.achievements = saveData.achievements;
+                    GameState.stats = saveData.stats;
+                    
+                    // Réinitialise l'UI
+                    updateResourceDisplay();
+                    updateOrbitMachines();
+                    updateOrbitResearch();
+                    
+                    showMessage("Jeu importé avec succès!");
+                } catch (error) {
+                    console.error("Erreur d'import:", error);
+                    showMessage("Erreur d'import du fichier", "warning");
+                }
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    }
+    
+    // === SECTION 9: AUDIO SYSTEM (Système audio) ===
+    // Sons du jeu (Web Audio API)
+    
+    /* Initialise l'audio */
+    function initAudio() {
+        try {
+            // Crée le contexte audio
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            GameState.audio = {
+                context: new AudioContext(),
+                sounds: {},
+                enabled: true
+            };
+            
+            // Crée les sons de base
+            createSound('place', 440, 0.1);
+            createSound('upgrade', 880, 0.2);
+            createSound('sell', 220, 0.1);
+            createSound('levelup', [523.25, 659.25, 783.99], 0.3);
+            createSound('achievement', [783.99, 1046.50], 0.4);
+            createSound('paradox', [55, 110, 220], 0.5);
+            
+            console.log("Audio initialisé");
+        } catch (e) {
+            console.warn("Audio non supporté:", e);
+            GameState.audio = { enabled: false };
+        }
+    }
+    
+    /* Crée un son */
+    function createSound(name, frequency, duration) {
+        if (!GameState.audio || !GameState.audio.enabled) return;
+        
+        const context = GameState.audio.context;
+        
+        // Crée un oscillateur
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        
+        // Configure la fréquence
+        if (Array.isArray(frequency)) {
+            // Mélange d'accords
+            oscillator.frequency.setValueAtTime(frequency[0], context.currentTime);
+            for (let i = 1; i < frequency.length; i++) {
+                oscillator.frequency.exponentialRampToValueAtTime(
+                    frequency[i], 
+                    context.currentTime + duration * (i / frequency.length)
+                );
+            }
+        } else {
+            oscillator.frequency.value = frequency;
+        }
+        
+        // Configure le type d'onde
+        oscillator.type = 'sine';
+        
+        // Enveloppe ADSR
+        gainNode.gain.setValueAtTime(0, context.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, context.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+        
+        // Stocke le son
+        GameState.audio.sounds[name] = {
+            oscillator: oscillator,
+            gain: gainNode,
+            duration: duration
+        };
+    }
+    
+    /* Joue un son */
+    function playSound(name) {
+        if (!GameState.audio || !GameState.audio.enabled || !GameState.audio.sounds[name]) {
+            return;
+        }
+        
+        try {
+            const sound = GameState.audio.sounds[name];
+            const context = GameState.audio.context;
+            
+            // Si le contexte est suspendu (à cause de l'autoplay policy), le reprend
+            if (context.state === 'suspended') {
+                context.resume();
+            }
+            
+            // Joue le son
+            sound.oscillator.start();
+            sound.oscillator.stop(context.currentTime + sound.duration);
+        } catch (e) {
+            console.warn("Erreur de lecture audio:", e);
+        }
+    }
+    
+    // === SECTION 10: INIT & MAIN (Initialisation et point d'entrée) ===
+    // Point d'entrée principal, démarrage du jeu
+    
+    /* Initialise le jeu au chargement */
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log(`Quantum Factory Tycoon 7.0 - Singularity Edition`);
+        console.log(`Platform: ${PLATFORM.isMobile ? 'Mobile' : 'Desktop'}`);
+        console.log(`Screen: ${PLATFORM.screenWidth}x${PLATFORM.screenHeight}`);
+        
+        // Initialise l'audio
+        initAudio();
+        
+        // Essaie de charger une sauvegarde existante
+        const loaded = loadGame();
+        
+        // Si pas de sauvegarde, initialise un nouveau jeu
+        if (!loaded) {
+            console.log("Nouvelle partie");
+        }
+        
+        // Initialise la boucle de jeu
+        initGameLoop();
+        
+        // PWA: détecte si l'app est installée
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+        
+        // PWA: invite d'installation
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Montre un bouton d'installation après un délai
+            setTimeout(() => {
+                if (confirm("Installer Quantum Factory Tycoon en PWA?")) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('PWA installé');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }, 10000);
+        });
+    });
+    
+    /* Affiche les paramètres */
+    function showSettings() {
+        const settingsHtml = `
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; padding: 20px; overflow-y: auto;">
+                <div style="max-width: 600px; margin: 50px auto; background: rgba(0,20,40,0.8); border-radius: 16px; padding: 30px; border: 1px solid #00ffff;">
+                    <h2 style="color: #00ffff; text-align: center;">Paramètres Quantiques</h2>
+                    
+                    <div style="margin-top: 30px;">
+                        <h3>Affichage</h3>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" id="showGrid" ${GameState.ui.showGrid ? 'checked' : ''}>
+                            Afficher la grille
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" id="showConnections" ${GameState.ui.showConnections ? 'checked' : ''}>
+                            Afficher les connexions
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" id="showHeatmap" ${GameState.ui.showHeatmap ? 'checked' : ''}>
+                            Afficher la heatmap
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <h3>Audio</h3>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" id="audioEnabled" ${GameState.audio?.enabled ? 'checked' : ''}>
+                            Sons activés
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <h3>Performance</h3>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" id="vsync" checked>
+                            VSync (60 FPS)
+                        </label>
+                        <div style="margin-top: 10px;">
+                            Max particules: <input type="range" id="maxParticles" min="10" max="1000" value="${CONFIG.PERFORMANCE.PARTICLES_MAX}" style="width: 200px;">
+                            <span id="particlesValue">${CONFIG.PERFORMANCE.PARTICLES_MAX}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 40px; text-align: center;">
+                        <button onclick="saveSettings()" style="padding: 10px 30px; background: #00ffff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                            Sauvegarder
+                        </button>
+                        <button onclick="closeSettings()" style="padding: 10px 30px; background: #666; color: #fff; border: none; border-radius: 8px; margin-left: 20px; cursor: pointer;">
+                            Annuler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const settings = document.createElement('div');
+        settings.id = 'settingsOverlay';
+        settings.innerHTML = settingsHtml;
+        document.body.appendChild(settings);
+        
+        // Met à jour la valeur des particules en temps réel
+        document.getElementById('maxParticles').addEventListener('input', function() {
+            document.getElementById('particlesValue').textContent = this.value;
+        });
+    }
+    
+    /* Sauvegarde les paramètres */
+    function saveSettings() {
+        // Récupère les valeurs
+        GameState.ui.showGrid = document.getElementById('showGrid').checked;
+        GameState.ui.showConnections = document.getElementById('showConnections').checked;
+        GameState.ui.showHeatmap = document.getElementById('showHeatmap').checked;
+        
+        if (GameState.audio) {
+            GameState.audio.enabled = document.getElementById('audioEnabled').checked;
+        }
+        
+        CONFIG.PERFORMANCE.PARTICLES_MAX = parseInt(document.getElementById('maxParticles').value);
+        
+        // Sauvegarde les paramètres
+        localStorage.setItem('QuantumFactory_Settings', JSON.stringify({
+            ui: GameState.ui,
+            audio: GameState.audio?.enabled,
+            particles: CONFIG.PERFORMANCE.PARTICLES_MAX
+        }));
+        
+        closeSettings();
+        showMessage("Paramètres sauvegardés!");
+    }
+    
+    /* Ferme les paramètres */
+    function closeSettings() {
+        const settings = document.getElementById('settingsOverlay');
+        if (settings) settings.remove();
+    }
+    
+    /* Affiche l'aide */
+    function showHelp() {
+        const helpHtml = `
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; padding: 20px; overflow-y: auto;">
+                <div style="max-width: 800px; margin: 30px auto; background: rgba(0,20,40,0.8); border-radius: 16px; padding: 30px; border: 1px solid #00ffff;">
+                    <h2 style="color: #00ffff; text-align: center;">Aide - Quantum Factory Tycoon 7.0</h2>
+                    
+                    <div style="margin-top: 30px;">
+                        <h3>🎮 Comment jouer</h3>
+                        <p><strong>Mobile:</strong> Tap pour sélectionner, swipe pour déplacer la grille, pinch pour zoomer.</p>
+                        <p><strong>Desktop:</strong> Clic gauche pour sélectionner, molette pour zoomer, clic droit pour le menu.</p>
+                        
+                        <h3>🏭 Machines de base</h3>
+                        <ul>
+                            <li><strong>⛏️ Extracteur:</strong> Produit de la matière</li>
+                            <li><strong>⚡ Générateur:</strong> Produit de l'énergie</li>
+                            <li><strong>📦 Silo:</strong> Stocke les ressources</li>
+                            <li><strong>💰 Vendeur:</strong> Vends la matière contre de l'argent</li>
+                        </ul>
+                        
+                        <h3>🌪️ Système d'Entropie</h3>
+                        <p>L'entropie augmente avec les déchets et le temps. À 90%, des paradoxes peuvent survenir (bons ou mauvais!).</p>
+                        
+                        <h3>📈 Progression</h3>
+                        <p>Gagne de l'XP en produisant et vendant. Monte de niveau pour débloquer de nouvelles machines et agrandir ta grille.</p>
+                    </div>
+                    
+                    <div style="margin-top: 40px; text-align: center;">
+                        <button onclick="closeHelp()" style="padding: 10px 30px; background: #00ffff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                            Compris!
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center; font-size: 12px; opacity: 0.7;">
+                        Quantum Factory Tycoon 7.0 - Singularity Edition<br>
+                        Développé avec ❤️ pour les tycoon addicts
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const help = document.createElement('div');
+        help.id = 'helpOverlay';
+        help.innerHTML = helpHtml;
+        document.body.appendChild(help);
+    }
+    
+    /* Ferme l'aide */
+    function closeHelp() {
+        const help = document.getElementById('helpOverlay');
+        if (help) help.remove();
+    }
+    
+    /* Exporte l'usine en JSON (pour partage) */
+    function exportFactory() {
+        const factoryData = {
+            name: `Usine de Niv. ${GameState.player.level}`,
+            player: GameState.player.level,
+            machines: GameState.placedMachines.map(m => ({
+                type: m.id,
+                x: m.x,
+                y: m.y,
+                level: m.level
+            })),
+            stats: GameState.stats,
+            timestamp: Date.now()
+        };
+        
+        const dataStr = JSON.stringify(factoryData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', `Usine_Quantique_${Date.now()}.json`);
+        linkElement.click();
+        
+        showMessage("Usine exportée pour partage!");
+    }
+    
+    /* Importe une usine depuis JSON */
+    function importFactory() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    const factoryData = JSON.parse(event.target.result);
+                    
+                    // Vérifie le format
+                    if (!factoryData.machines || !Array.isArray(factoryData.machines)) {
+                        throw new Error("Format d'usine invalide");
+                    }
+                    
+                    // Demande confirmation (remplace l'usine actuelle)
+                    if (confirm("Importer cette usine? (Remplace l'actuelle)")) {
+                        // Vide la grille actuelle
+                        GameState.grid.cells.fill(null);
+                        GameState.placedMachines = [];
+                        
+                        // Place les nouvelles machines
+                        for (const machine of factoryData.machines) {
+                            if (MACHINES.find(m => m.id === machine.type)) {
+                                placeMachine(machine.type, machine.x, machine.y, 0);
+                            }
+                        }
+                        
+                        showMessage("Usine importée avec succès!");
+                    }
+                } catch (error) {
+                    console.error("Erreur d'import d'usine:", error);
+                    showMessage("Erreur d'import de l'usine", "warning");
+                }
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    }
+    
+    // === FONCTIONS GLOBALES (exposées pour l'UI) ===
+    // Ces fonctions sont appelées depuis l'HTML
+    
+    window.placeMachine = placeMachine;
+    window.rotateMachine = rotateMachine;
+    window.sellMachine = sellMachine;
+    window.upgradeMachine = upgradeMachine;
+    window.saveGame = saveGame;
+    window.loadGame = loadGame;
+    window.exportGame = exportGame;
+    window.importGame = importGame;
+    window.exportFactory = exportFactory;
+    window.importFactory = importFactory;
+    window.showSettings = showSettings;
+    window.showHelp = showHelp;
+    window.closeMobileMenu = closeMobileMenu;
+    window.closeSettings = closeSettings;
+    window.closeHelp = closeHelp;
+    
+    /* Message de démarrage */
+    console.log("%cQuantum Factory Tycoon 7.0 - Singularity Edition", "color: #00ffff; font-size: 18px; font-weight: bold;");
+    console.log("%cPrêt à exploiter l'univers quantique! 🌌", "color: #ff00ff;");
+    
+    </script>
+</body>
+</html>
