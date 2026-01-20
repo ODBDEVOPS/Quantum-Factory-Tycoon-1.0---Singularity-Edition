@@ -1093,5 +1093,3 @@ const sounds = {
 ```
 
 **GÉNÈRE MAINTENANT le code complet basé sur ce GDD. Le joueur doit pouvoir jouer en <2min après ouverture !**
-```
-
